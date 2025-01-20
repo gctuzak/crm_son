@@ -1,0 +1,31 @@
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-header {
+  background: #001529;
+  padding: 0 20px;
+}
+
+.app-header h1 {
+  color: white;
+  margin: 0;
+  line-height: 64px;
+}
+
+.app-content {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+  .app-content {
+    padding: 12px;
+  }
+  
+  .app-header h1 {
+    font-size: 20px;
+  }
+} 

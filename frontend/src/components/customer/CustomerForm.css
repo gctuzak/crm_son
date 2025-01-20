@@ -1,0 +1,82 @@
+.customer-form {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.customer-form h2 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 24px;
+}
+
+.customer-type-selector {
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.ant-form-item {
+  margin-bottom: 16px;
+}
+
+.ant-form-item-label {
+  font-weight: 500;
+}
+
+.ant-input,
+.ant-input-textarea {
+  border-radius: 4px;
+}
+
+.ant-input:focus,
+.ant-input-textarea:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.ant-btn {
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.ant-btn-primary {
+  background: #1890ff;
+}
+
+.ant-btn-primary:hover {
+  background: #40a9ff;
+}
+
+.ant-upload-picture-card-wrapper {
+  margin-bottom: 24px;
+}
+
+.ant-upload.ant-upload-select-picture-card {
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+  .customer-form {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  .ant-btn {
+    width: 100%;
+    margin: 5px 0 !important;
+  }
+} 
