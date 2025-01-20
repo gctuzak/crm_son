@@ -6,22 +6,23 @@ class CompanyService {
     async getAll() {
         try {
             const response = await api.get('/companies');
-            console.log('Şirketler yanıtı:', response);
-            if (response.data?.success) {
+            console.log('API Yanıtı:', response);
+            
+            if (response.data && response.data.data && Array.isArray(response.data.data.rows)) {
                 return {
-                    data: response.data.data || [],
-                    success: true
+                    success: true,
+                    data: response.data.data.rows
                 };
             }
+            
+            console.error('Geçersiz API yanıtı:', response);
             return {
-                data: [],
                 success: false,
-                error: 'Şirketler alınamadı'
+                error: 'Geçersiz veri formatı'
             };
         } catch (error) {
             console.error('Şirketler getirilirken hata:', error);
             return {
-                data: [],
                 success: false,
                 error: error.message
             };
@@ -59,42 +60,58 @@ class CompanyService {
     async create(data) {
         try {
             const response = await api.post('/companies', data);
-            return response.data;
+            return {
+                success: true,
+                data: response.data.data
+            };
         } catch (error) {
             console.error('Şirket oluşturulurken hata:', error);
-            throw error;
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
     async update(id, data) {
         try {
-            console.log('Güncelleme isteği gönderiliyor:', { id, data });
             const response = await api.put(`/companies/${id}`, data);
-            console.log('Güncelleme yanıtı:', response);
-            return response.data;
+            return {
+                success: true,
+                data: response.data.data
+            };
         } catch (error) {
             console.error('Şirket güncellenirken hata:', error);
-            throw error;
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
     async delete(id) {
         try {
-            console.log('Silme isteği gönderiliyor:', id);
+            console.log('Silme isteği gönderiliyor. ID:', id);
             const response = await api.delete(`/companies/${id}`);
             console.log('Silme yanıtı:', response);
             
-            if (response.status === 200 && response.data.success) {
-                return { success: true };
+            if (response.data && response.data.success) {
+                return {
+                    success: true,
+                    message: 'Şirket başarıyla silindi'
+                };
             }
-            throw new Error(response.data.message || 'Silme işlemi başarısız oldu');
+            
+            return {
+                success: false,
+                error: response.data?.message || 'Silme işlemi başarısız oldu'
+            };
         } catch (error) {
-            console.error('Silme hatası detayı:', error.response || error);
-            if (error.response) {
-                const message = error.response.data?.message || 'Sunucu hatası';
-                throw new Error(`Silme işlemi başarısız: ${message}`);
-            }
-            throw new Error('Silme işlemi sırasında bir hata oluştu');
+            console.error('Silme hatası:', error);
+            return {
+                success: false,
+                error: error.message || 'Silme işlemi başarısız oldu'
+            };
         }
     }
 }

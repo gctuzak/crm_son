@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
@@ -16,6 +18,8 @@ import ProductForm from './components/product/ProductForm';
 import OrderList from './components/order/OrderList';
 import OrderForm from './components/order/OrderForm';
 import { AuthProvider } from './contexts/AuthContext';
+import PersonList from './components/person/PersonList';
+import CompanyList from './components/company/CompanyList';
 
 const PageWithLayout = ({ children }) => (
     <Layout>
@@ -33,6 +37,12 @@ const App = () => {
                     <Route path="/dashboard" element={
                         <PageWithLayout>
                             <Dashboard />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/customers" element={
+                        <PageWithLayout>
+                            <CustomerList />
                         </PageWithLayout>
                     } />
 
@@ -92,7 +102,7 @@ const App = () => {
 
                     <Route path="/persons" element={
                         <PageWithLayout>
-                            <CustomerList />
+                            <PersonList />
                         </PageWithLayout>
                     } />
 
@@ -105,6 +115,12 @@ const App = () => {
                     <Route path="/persons/:id/edit" element={
                         <PageWithLayout>
                             <PersonForm />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/companies" element={
+                        <PageWithLayout>
+                            <CompanyList />
                         </PageWithLayout>
                     } />
 

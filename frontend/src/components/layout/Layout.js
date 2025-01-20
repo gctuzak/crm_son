@@ -4,14 +4,14 @@ import { Link, useLocation } from 'react-router-dom';
 const Layout = ({ children }) => {
     const location = useLocation();
 
-    const navigation = [
-        { name: 'Dashboard', to: '/dashboard' },
-        { name: 'İlişki / Müşteri', to: '/persons' },
-        { name: 'Aktivite / Görev', to: '/activities' },
-        { name: 'Teklif', to: '/quotes' },
-        { name: 'Sipariş', to: '/orders' },
-        { name: 'Ürün / Hizmet', to: '/products' },
-        { name: 'Dosyalar', to: '/files' }
+    const menuItems = [
+        { path: '/dashboard', icon: 'dashboard', text: 'Dashboard' },
+        { path: '/customers', icon: 'people', text: 'Müşteriler' },
+        { path: '/orders', icon: 'shopping_cart', text: 'Siparişler' },
+        { path: '/products', icon: 'inventory', text: 'Ürünler' },
+        { path: '/quotes', icon: 'request_quote', text: 'Teklifler' },
+        { path: '/activities', icon: 'event', text: 'Aktiviteler' },
+        { path: '/files', icon: 'folder', text: 'Dosyalar' },
     ];
 
     return (
@@ -64,19 +64,19 @@ const Layout = ({ children }) => {
                 {/* Sidebar */}
                 <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
                     <nav className="mt-4">
-                        {navigation.map((item) => {
-                            const isActive = location.pathname === item.to;
+                        {menuItems.map((item) => {
+                            const isActive = location.pathname === item.path;
                             return (
                                 <Link
-                                    key={item.name}
-                                    to={item.to}
+                                    key={item.text}
+                                    to={item.path}
                                     className={`block px-4 py-2 mx-2 rounded-md text-sm ${
                                         isActive
                                             ? 'bg-orange-50 text-orange-500'
                                             : 'text-gray-900 hover:bg-orange-50 hover:text-orange-500'
                                     }`}
                                 >
-                                    {item.name}
+                                    {item.text}
                                 </Link>
                             );
                         })}
