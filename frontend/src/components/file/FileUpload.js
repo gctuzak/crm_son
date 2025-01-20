@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fileService } from '../../services/api';
+import { fileService } from '../../services/fileService';
 
 const FileUpload = () => {
     const navigate = useNavigate();

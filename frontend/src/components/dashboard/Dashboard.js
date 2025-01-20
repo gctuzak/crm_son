@@ -1,101 +1,148 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { statsService } from '../../services/api';
+import { statsService } from '../../services/statsService';
 import { OrdersChart } from './OrdersChart';
 import { ActivityChart } from './ActivityChart';
 import { PerformanceGauge } from './PerformanceGauge';
 import { MapContainer } from './MapContainer';
 
 const Dashboard = () => {
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [stats, setStats] = useState({
-        persons: 0,
-        companies: 0,
-        files: 0
-    });
+    const [error, setError] = useState(null);
 
     useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await statsService.getDashboardStats();
+                console.log('Dashboard yanıtı:', response);
+                
+                if (response.success) {
+                    setStats(response.data);
+                } else {
+                    setError(response.error);
+                }
+            } catch (err) {
+                console.error('Dashboard hatası:', err);
+                setError('İstatistikler alınamadı');
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchStats();
     }, []);
 
-    const fetchStats = async () => {
-        try {
-            console.log('Dashboard: Stats verisi isteniyor...');
-            const response = await statsService.getDashboardStats();
-            
-            if (!response || !response.data) {
-                throw new Error('API yanıtı alınamadı');
-            }
-
-            console.log('Stats yanıtı:', response.data);
-            
-            if (response.data.success && response.data.stats) {
-                setStats(response.data.stats);
-            } else {
-                throw new Error('Geçersiz API yanıtı');
-            }
-        } catch (error) {
-            console.error('Dashboard hatası:', error);
-            setError(`Veriler yüklenirken bir hata oluştu: ${error.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-700">{error}</p>
+            <div className="p-4 rounded-md bg-red-50 border border-red-200">
+                <p className="text-red-600">{error}</p>
             </div>
         );
     }
 
-    return (
-        <div className="space-y-6 p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">CRM ITEM Dashboard</h1>
+    if (!stats) {
+        return (
+            <div className="p-4 rounded-md bg-yellow-50 border border-yellow-200">
+                <p className="text-yellow-600">Henüz istatistik verisi yok</p>
             </div>
+        );
+    }
 
-            {/* ÖZET TABLOLAR / GRAFİKLER */}
-            <div>
-                <h2 className="text-base font-medium mb-4">ÖZET TABLOLAR / GRAFİKLER</h2>
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-sm font-medium text-gray-500">Toplam Kişi</h3>
-                        <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.persons}</p>
+    // Stats verilerini kontrol etmek için
+    console.log('Görüntülenecek stats:', stats);
+
+    return (
+        <div className="p-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Kişi İstatistikleri */}
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Kişi İstatistikleri</h2>
+                    <div className="space-y-3">
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Toplam Kişi:</span>
+                            <span className="font-medium">{stats.stats?.persons || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Aktif Kişi:</span>
+                            <span className="font-medium">{stats.stats?.persons || 0}</span>
+                        </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-sm font-medium text-gray-500">Toplam Şirket</h3>
-                        <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.companies}</p>
+                </div>
+
+                {/* Şirket İstatistikleri */}
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Şirket İstatistikleri</h2>
+                    <div className="space-y-3">
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Toplam Şirket:</span>
+                            <span className="font-medium">{stats.stats?.companies || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Aktif Şirket:</span>
+                            <span className="font-medium">{stats.stats?.companies || 0}</span>
+                        </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-sm font-medium text-gray-500">Toplam Dosya</h3>
-                        <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.files}</p>
+                </div>
+
+                {/* Aktivite İstatistikleri */}
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Aktivite İstatistikleri</h2>
+                    <div className="space-y-3">
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Toplam Aktivite:</span>
+                            <span className="font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Bekleyen Aktivite:</span>
+                            <span className="font-medium">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* PERFORMANS GÖSTERGELERİ */}
-            <div>
-                <h2 className="text-base font-medium mb-4">PERFORMANS GÖSTERGELERİ</h2>
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <PerformanceGauge title="Müşteri Memnuniyeti" value={85} />
-                    </div>
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <PerformanceGauge title="Hedef Gerçekleştirme" value={92} />
-                    </div>
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <PerformanceGauge title="Büyüme Oranı" value={78} />
-                    </div>
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-6">ÖZET TABLOLAR / GRAFİKLER</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Toplam Kişi</h3>
+                    <p className="text-3xl font-semibold">{stats.stats?.persons || 0}</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Toplam Şirket</h3>
+                    <p className="text-3xl font-semibold">{stats.stats?.companies || 0}</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Toplam Dosya</h3>
+                    <p className="text-3xl font-semibold">{stats.stats?.files || 0}</p>
+                </div>
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 mb-6">PERFORMANS GÖSTERGELERİ</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Müşteri Memnuniyeti</h3>
+                    <p className="text-3xl font-semibold">0%</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Hedef Gerçekleştirme</h3>
+                    <p className="text-3xl font-semibold">0%</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-base font-medium text-gray-500 mb-2">Büyüme Oranı</h3>
+                    <p className="text-3xl font-semibold">0%</p>
                 </div>
             </div>
 

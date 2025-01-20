@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { companyService } from '../../services/api';
+import { companyService } from '../../services/companyService';
 
 const CompanyList = ({ searchTerm }) => {
     const [companies, setCompanies] = useState([]);

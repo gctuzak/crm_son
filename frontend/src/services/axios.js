@@ -18,6 +18,14 @@ axiosInstance.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Debug log
+        console.log('API İsteği:', {
+            method: config.method,
+            url: config.url,
+            fullUrl: `${config.baseURL}${config.url}`
+        });
+
         return config;
     },
     (error) => {

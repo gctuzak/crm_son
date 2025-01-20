@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import personService from '../../services/personService';
+import { personService } from '../../services/personService';
 
 const PersonList = () => {
     const [persons, setPersons] = useState([]);
@@ -10,26 +10,27 @@ const PersonList = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    const fetchPersons = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const result = await personService.getAll();
-            if (result.success) {
-                setPersons(result.rows);
-            } else {
-                setError('Veriler alınamadı');
-                setPersons([]);
-            }
-        } catch (err) {
-            setError('Kişiler yüklenirken bir hata oluştu');
-            setPersons([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchPersons = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await personService.getAll();
+                console.log('Kişiler yanıtı:', response);
+                
+                if (response.success) {
+                    setPersons(response.data || []);
+                } else {
+                    setError(response.error || 'Kişiler alınamadı');
+                }
+            } catch (err) {
+                console.error('Kişiler yüklenirken hata:', err);
+                setError('Kişiler yüklenirken bir hata oluştu');
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchPersons();
     }, []);
 
@@ -51,13 +52,13 @@ const PersonList = () => {
                 await personService.delete(id);
                 
                 // Silme başarılı olduktan sonra listeyi yenile
-                await fetchPersons();
-                
+                const response = await personService.getAll();
+                if (response.success) {
+                    setPersons(response.data || []);
+                }
             } catch (err) {
                 console.error('Silme hatası:', err);
                 setError(err.message || 'Kişi silinirken bir hata oluştu');
-                // Hata durumunda da listeyi yenile
-                await fetchPersons();
             } finally {
                 setLoading(false);
             }

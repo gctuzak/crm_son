@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { personService } from '../../services/api';
+import { personService } from '../../services/personService';
 
 const ActivityForm = () => {
     const navigate = useNavigate();

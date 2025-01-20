@@ -1,9 +1,3 @@
-import personService from './personService';
-import companyService from './companyService';
-import fileService from './fileService';
+import api from './api';
 
-export {
-    personService,
-    companyService,
-    fileService
-}; 
+export default api; 

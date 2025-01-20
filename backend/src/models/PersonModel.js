@@ -183,14 +183,14 @@ class PersonModel extends BaseModel {
             
             console.log('Query Result:', result);
             
-            // Sonuç direkt olarak dizi şeklinde geliyor
-            if (!result || result.length === 0) {
+            // Sonuç kontrolü
+            if (!result.rows || result.rows.length === 0) {
                 console.log('Güncelleme başarısız: Sonuç boş');
                 throw new Error('Güncelleme başarısız: Kayıt bulunamadı');
             }
 
-            console.log('Güncelleme başarılı:', result[0]);
-            return result[0];
+            console.log('Güncelleme başarılı:', result.rows[0]);
+            return result.rows[0];
         } catch (error) {
             console.error('UpdatePerson Error:', error);
             if (error.code === '23505') {
@@ -230,7 +230,7 @@ class PersonModel extends BaseModel {
                 throw new Error('Geçersiz ID formatı');
             }
 
-            const result = await dbQuery(
+            const result = await this.query(
                 `SELECT p.*, c.name as company_name 
                  FROM persons p 
                  LEFT JOIN companies c ON p.company_id = c.id 
@@ -240,12 +240,12 @@ class PersonModel extends BaseModel {
 
             console.log('FindById DB sonucu:', result);
 
-            if (!result || result.length === 0) {
+            if (!result.rows || result.rows.length === 0) {
                 console.log(`ID ${numericId} olan kayıt bulunamadı`);
-                throw new Error(`ID ${numericId} olan kayıt bulunamadı`);
+                return null;
             }
 
-            const person = result[0];
+            const person = result.rows[0];
             console.log('Bulunan kişi:', person);
             return person;
         } catch (error) {

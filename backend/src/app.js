@@ -1,24 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const { connectDB } = require('./config/database');
 const routes = require('./routes');
-const { errorHandler } = require('./utils/errorHandler');
+const { errorHandler } = require('./utils/errors');
 
 const app = express();
 
-// Middleware
+// Middleware'ler
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Veritabanı bağlantısı
-connectDB();
+// API route'ları
+app.use('/api', routes);
 
-// Routes - /api prefix'ini kaldırıyoruz
-app.use('/', routes);
-
-// Error handling
+// Hata yakalama
 app.use(errorHandler);
 
 // 404 handler
