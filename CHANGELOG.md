@@ -50,4 +50,12 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir.
 ### Teknik İyileştirmeler
 - Companies tablosunda email alanı array tipinden varchar(255) tipine dönüştürüldü
 - Form veri gönderim formatları optimize edildi
-- Boş alan kontrolleri iyileştirildi 
+- Boş alan kontrolleri iyileştirildi
+
+## [1.0.7] - 2024-03-21
+
+### Değişiklikler
+- Aktivite formunda ilişki/müşteri arama alanı iyileştirildi
+  - Hem kişiler hem de şirketler aynı arama kutusunda aranabilir hale getirildi
+  - Kişiler ve şirketler ayrı başlıklar altında listelendi
+  - Şirketler doğrudan seçilebilir hale getirildi 

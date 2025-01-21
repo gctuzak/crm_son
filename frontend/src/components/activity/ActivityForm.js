@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { personService } from '../../services/personService';
+import { companyService } from '../../services/companyService';
 
 const ActivityForm = () => {
     const navigate = useNavigate();
@@ -15,9 +16,13 @@ const ActivityForm = () => {
         order: '',
     });
 
-    // Müşteri listesi state
+    // Müşteri ve şirket listesi state
     const [customers, setCustomers] = useState([]);
+    const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [showCustomerList, setShowCustomerList] = useState(false);
 
     // Mock veriler
     const activityTypes = [
@@ -31,20 +36,34 @@ const ActivityForm = () => {
         { id: 8, name: 'Fiyat görüşmesi' }
     ];
 
-    // Müşterileri getir
+    // Verileri getir
     useEffect(() => {
-        const fetchCustomers = async () => {
+        const fetchData = async () => {
             try {
-                const data = await personService.getAll();
-                setCustomers(data);
+                const [customersResponse, companiesResponse] = await Promise.all([
+                    personService.getAll(),
+                    companyService.getAll()
+                ]);
+
+                console.log('Müşteriler yanıtı:', customersResponse);
+                console.log('Şirketler yanıtı:', companiesResponse);
+
+                if (customersResponse.success && Array.isArray(customersResponse.data)) {
+                    setCustomers(customersResponse.data);
+                }
+
+                if (companiesResponse.success && Array.isArray(companiesResponse.data)) {
+                    console.log('Şirketler verisi:', companiesResponse.data);
+                    setCompanies(companiesResponse.data);
+                }
             } catch (error) {
-                console.error('Müşteriler yüklenirken hata:', error);
+                console.error('Veriler yüklenirken hata:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchCustomers();
+        fetchData();
     }, []);
 
     const handleChange = (e) => {
@@ -53,6 +72,49 @@ const ActivityForm = () => {
             ...prev,
             [name]: value
         }));
+    };
+
+    const handleCustomerSearch = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        setShowCustomerList(true);
+        if (!value) {
+            setSelectedCustomer(null);
+            setFormData(prev => ({ ...prev, customer: '' }));
+        }
+    };
+
+    const handleCustomerSelect = (item, type) => {
+        if (type === 'person') {
+            setSelectedCustomer(item);
+            setSearchTerm(`${item.first_name} ${item.last_name}${item.company_name ? ` - ${item.company_name}` : ''}`);
+            setFormData(prev => ({ ...prev, customer: item.id }));
+        } else {
+            setSelectedCustomer({ company_id: item.id });
+            setSearchTerm(item.name);
+            setFormData(prev => ({ ...prev, customer: `company_${item.id}` }));
+        }
+        setShowCustomerList(false);
+    };
+
+    const getFilteredResults = () => {
+        const searchTermLower = searchTerm.toLowerCase();
+        
+        // Kişileri sadece isimleri üzerinden ara
+        const filteredPersons = customers.filter(customer => {
+            const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+            return fullName.includes(searchTermLower);
+        });
+
+        // Şirketleri sadece şirket adı üzerinden ara
+        const filteredCompanies = companies.filter(company => 
+            (company?.name || '').toLowerCase().includes(searchTermLower)
+        );
+
+        return {
+            persons: filteredPersons,
+            companies: filteredCompanies
+        };
     };
 
     const handleSubmit = (e) => {
@@ -163,21 +225,66 @@ const ActivityForm = () => {
                         </div>
 
                         {/* İlişki/Müşteri */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative">
                             <label className="block text-sm font-medium text-gray-700">İlişki/Müşteri</label>
-                            <select
-                                name="customer"
-                                value={formData.customer}
-                                onChange={handleChange}
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={handleCustomerSearch}
+                                onFocus={() => setShowCustomerList(true)}
+                                placeholder="Müşteri ara..."
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            >
-                                <option value="">Seçiniz</option>
-                                {customers.map(customer => (
-                                    <option key={customer.id} value={customer.id}>
-                                        {customer.first_name} {customer.last_name}
-                                    </option>
-                                ))}
-                            </select>
+                            />
+                            {showCustomerList && searchTerm && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    {(() => {
+                                        const { persons, companies } = getFilteredResults();
+                                        
+                                        if (persons.length === 0 && companies.length === 0) {
+                                            return <div className="px-4 py-2 text-gray-500">Sonuç bulunamadı</div>;
+                                        }
+
+                                        return (
+                                            <>
+                                                {persons.length > 0 && (
+                                                    <div className="border-b border-gray-200">
+                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50">
+                                                            Kişiler
+                                                        </div>
+                                                        {persons.map(person => (
+                                                            <div
+                                                                key={`person_${person.id}`}
+                                                                onClick={() => handleCustomerSelect(person, 'person')}
+                                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                                            >
+                                                                {person.first_name} {person.last_name}
+                                                                {person.company_name && ` - ${person.company_name}`}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                
+                                                {companies.length > 0 && (
+                                                    <div>
+                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50">
+                                                            Şirketler
+                                                        </div>
+                                                        {companies.map(company => (
+                                                            <div
+                                                                key={`company_${company.id}`}
+                                                                onClick={() => handleCustomerSelect(company, 'company')}
+                                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                                            >
+                                                                {company.name}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            )}
                         </div>
 
                         {/* Teklif */}
