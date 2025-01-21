@@ -78,7 +78,7 @@ const PersonForm = () => {
                 console.log('Yeni kişi oluşturuluyor:', formData);
                 await personService.create(formData);
             }
-            navigate('/persons');
+            navigate('/customers?tab=persons');
         } catch (err) {
             console.error('Form gönderilirken hata:', err);
             setError(err.message || 'İşlem sırasında bir hata oluştu');
@@ -221,7 +221,7 @@ const PersonForm = () => {
                 <div className="flex justify-end space-x-3 pt-6 border-t">
                     <button
                         type="button"
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/customers?tab=persons')}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         İptal

@@ -92,7 +92,7 @@ const CompanyForm = () => {
                 response = await companyService.update(id, submitData);
                 console.log('Güncelleme yanıtı:', response);
                 if (response.success) {
-                    navigate('/dashboard');
+                    navigate('/customers?tab=companies');
                 } else {
                     throw new Error(response.error || 'Güncelleme başarısız oldu');
                 }
@@ -100,7 +100,7 @@ const CompanyForm = () => {
                 response = await companyService.create(submitData);
                 console.log('Oluşturma yanıtı:', response);
                 if (response.success) {
-                    navigate('/dashboard');
+                    navigate('/customers?tab=companies');
                 } else {
                     throw new Error(response.error || 'Kayıt oluşturulamadı');
                 }
@@ -286,7 +286,7 @@ const CompanyForm = () => {
                 <div className="flex justify-end space-x-3 pt-6 border-t">
                     <button
                         type="button"
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/customers?tab=companies')}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         İptal

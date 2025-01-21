@@ -35,4 +35,11 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir.
 ### Teknik İyileştirmeler
 - Companies tablosunda email alanı array tipinden varchar(255) tipine dönüştürüldü
 - Form veri gönderim formatları optimize edildi
-- Boş alan kontrolleri iyileştirildi 
+- Boş alan kontrolleri iyileştirildi
+
+## [1.0.5] - 2024-03-21
+
+### Değişiklikler
+- Şirket ve kişi formlarında iptal butonlarının yönlendirme adresleri düzeltildi
+- Şirket ve kişi formlarında başarılı kayıt sonrası yönlendirme adresleri düzeltildi
+- Form iptal butonları artık ilgili sekmelere yönlendiriyor (kişiler için /customers?tab=persons, şirketler için /customers?tab=companies) 
