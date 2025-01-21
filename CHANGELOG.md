@@ -21,4 +21,18 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir.
 
 ### Güvenlik
 - Temel güvenlik kontrolleri eklendi
-- Hata mesajlarında hassas bilgilerin gösterilmesi engellendi 
+- Hata mesajlarında hassas bilgilerin gösterilmesi engellendi
+
+## [1.0.4] - 2024-03-21
+
+### Değişiklikler
+- Şirket listesine ve formuna email alanı eklendi
+- Şirket güncelleme işlemindeki email alanı hatası düzeltildi
+- Kişi listesinde email alanı tıklanabilir hale getirildi (mailto: desteği)
+- Kişi ve şirket formlarında 2 sütunlu tasarıma geçildi
+- Form iptal butonlarındaki yönlendirme sorunları giderildi
+
+### Teknik İyileştirmeler
+- Companies tablosunda email alanı array tipinden varchar(255) tipine dönüştürüldü
+- Form veri gönderim formatları optimize edildi
+- Boş alan kontrolleri iyileştirildi 
