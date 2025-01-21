@@ -8,6 +8,8 @@ const Sidebar = () => {
         { path: '/dashboard', icon: '📊', label: 'Dashboard' },
         { path: '/activities', icon: '⏰', label: 'Aktivite / Görev' },
         { path: '/quotes', icon: '📄', label: 'Teklif' },
+        { path: '/orders', icon: '📦', label: 'Sipariş' },
+        { path: '/products', icon: '🏷️', label: 'Ürünler' },
         { path: '/persons', icon: '👥', label: 'Müşteriler' },
         { path: '/files', icon: '📁', label: 'Dosyalar' }
     ];

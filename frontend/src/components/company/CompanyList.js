@@ -81,101 +81,90 @@ const CompanyList = () => {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow">
-            <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="text-xl font-semibold">Şirket Listesi</h2>
+        <div className="container mx-auto p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-semibold text-gray-900">Şirketler</h1>
                 <button
                     onClick={() => navigate('/companies/new')}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
                 >
                     Yeni Şirket Ekle
                 </button>
             </div>
 
-            {/* Arama Kutusu */}
-            <div className="p-4 border-b">
+            <div className="mb-6">
                 <input
                     type="text"
-                    placeholder="Şirket adı, vergi no, telefon veya e-posta ara..."
+                    placeholder="Şirket ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
             </div>
 
-            {filteredCompanies.length === 0 ? (
-                <div className="text-center p-4 text-gray-500">
-                    {loading ? 'Yükleniyor...' : 'Kayıt bulunamadı'}
+            {error && (
+                <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                    <p className="font-medium">Hata</p>
+                    <p>{error}</p>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    ID
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Şirket Adı
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Vergi No
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Telefon
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    E-posta
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    İşlemler
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredCompanies.map((company) => (
-                                <tr key={company.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.id}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.name}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.tax_number}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.phone}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.email ? (
-                                            <a
-                                                href={`mailto:${company.email}`}
-                                                className="text-blue-600 hover:text-blue-800 hover:underline"
-                                                title="E-posta gönder"
-                                            >
-                                                {company.email}
-                                            </a>
-                                        ) : '-'}
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        <button
-                                            onClick={() => navigate(`/companies/${company.id}/edit`)}
-                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded mr-2"
-                                        >
-                                            Düzenle
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(company.id)}
-                                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded"
-                                        >
-                                            Sil
-                                        </button>
-                                    </td>
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket Adı</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vergi No</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şehir</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredCompanies.map((company) => (
+                                    <tr key={company.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.tax_number}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.phone}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {company.email && (
+                                                <a href={`mailto:${company.email}`} className="text-blue-600 hover:text-blue-800">
+                                                    {company.email}
+                                                </a>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.city}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => navigate(`/companies/${company.id}/edit`)}
+                                                className="text-orange-600 hover:text-orange-800 mr-4"
+                                            >
+                                                Düzenle
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(company.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                Sil
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {filteredCompanies.length === 0 && !loading && (
+                        <div className="text-center py-8 text-gray-500">
+                            Gösterilecek şirket bulunamadı.
+                        </div>
+                    )}
                 </div>
             )}
         </div>

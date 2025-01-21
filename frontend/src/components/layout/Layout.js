@@ -5,12 +5,12 @@ const Layout = ({ children }) => {
     const location = useLocation();
 
     const menuItems = [
-        { path: '/dashboard', icon: 'dashboard', text: 'Dashboard' },
+        { path: '/dashboard', icon: 'home', text: 'Ana Menü' },
         { path: '/customers', icon: 'people', text: 'Müşteriler' },
+        { path: '/activities', icon: 'event_note', text: 'Aktivite / Görev' },
+        { path: '/quotes', icon: 'description', text: 'Teklifler' },
         { path: '/orders', icon: 'shopping_cart', text: 'Siparişler' },
-        { path: '/products', icon: 'inventory', text: 'Ürünler' },
-        { path: '/quotes', icon: 'request_quote', text: 'Teklifler' },
-        { path: '/activities', icon: 'event', text: 'Aktiviteler' },
+        { path: '/products', icon: 'inventory_2', text: 'Ürünler' },
         { path: '/files', icon: 'folder', text: 'Dosyalar' },
     ];
 
@@ -70,12 +70,13 @@ const Layout = ({ children }) => {
                                 <Link
                                     key={item.text}
                                     to={item.path}
-                                    className={`block px-4 py-2 mx-2 rounded-md text-sm ${
+                                    className={`flex items-center px-4 py-2 mx-2 rounded-md text-sm ${
                                         isActive
                                             ? 'bg-orange-50 text-orange-500'
                                             : 'text-gray-900 hover:bg-orange-50 hover:text-orange-500'
                                     }`}
                                 >
+                                    <span className="material-icons text-xl mr-2">{item.icon}</span>
                                     {item.text}
                                 </Link>
                             );

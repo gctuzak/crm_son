@@ -2,6 +2,14 @@
 
 Tüm önemli değişiklikler bu dosyada belgelenecektir.
 
+## [1.0.6] - 2024-03-21
+
+### Değişiklikler
+- Sidebar menü düzeni güncellendi
+- Menü öğelerinin sıralaması değiştirildi
+- Material Icons eklenerek menü öğelerine ikonlar eklendi
+- Dashboard menü başlığı "Ana Menü" olarak güncellendi
+
 ## [1.0.5] - 2024-03-21
 
 ### Değişiklikler

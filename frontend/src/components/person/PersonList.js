@@ -85,100 +85,94 @@ const PersonList = () => {
     }
 
     return (
-        <div className="p-4">
-            <div className="mb-6 flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Kişi Listesi</h1>
-                    <p className="text-sm text-gray-600 mt-1">
-                        Toplam {filteredPersons.length} kişi bulundu
-                    </p>
-                </div>
+        <div className="container mx-auto p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-semibold text-gray-900">Kişiler</h1>
                 <button
                     onClick={() => navigate('/persons/new')}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
                 >
                     Yeni Kişi Ekle
                 </button>
             </div>
 
-            {/* Arama Kutusu */}
-            <div className="mb-4">
+            <div className="mb-6">
                 <input
                     type="text"
-                    placeholder="İsim, soyisim, TC kimlik, telefon veya şirket ara..."
+                    placeholder="Kişi ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
             </div>
 
             {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-red-600">{error}</p>
+                <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                    <p className="font-medium">Hata</p>
+                    <p>{error}</p>
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                {/* Tablo Başlıkları */}
-                <div className="bg-gray-50 p-3 border-b flex items-center">
-                    <span className="font-semibold text-gray-700 w-24">ID</span>
-                    <span className="font-semibold text-gray-700 w-48">İsim</span>
-                    <span className="font-semibold text-gray-700 w-48">Soyisim</span>
-                    <span className="font-semibold text-gray-700 w-48">TC Kimlik</span>
-                    <span className="font-semibold text-gray-700 w-36">Telefon</span>
-                    <span className="font-semibold text-gray-700 w-48">E-posta</span>
-                    <span className="font-semibold text-gray-700 w-32">Tip</span>
-                    <span className="font-semibold text-gray-700 w-32">Şehir</span>
-                    <span className="font-semibold text-gray-700 w-48">Şirket</span>
-                    <span className="font-semibold text-gray-700 w-32">İşlemler</span>
+            {loading ? (
+                <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
-                {/* Liste İçeriği */}
-                <ul>
-                    {filteredPersons && filteredPersons.length > 0 ? (
-                        filteredPersons.map(person => (
-                            <li key={person.id} className="p-3 border-b last:border-0 flex items-center hover:bg-gray-50">
-                                <span className="text-gray-700 w-24">{person.id}</span>
-                                <span className="text-gray-800 w-48">{person.first_name}</span>
-                                <span className="text-gray-800 w-48">{person.last_name}</span>
-                                <span className="text-gray-800 w-48">{person.identity_number}</span>
-                                <span className="text-gray-800 w-36">{person.phone}</span>
-                                <span className="text-gray-800 w-48">
-                                    {person.email ? (
-                                        <a
-                                            href={`mailto:${person.email}`}
-                                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                                            title="E-posta gönder"
-                                        >
-                                            {person.email}
-                                        </a>
-                                    ) : '-'}
-                                </span>
-                                <span className="text-gray-800 w-32">{person.type}</span>
-                                <span className="text-gray-800 w-32">{person.city || '-'}</span>
-                                <span className="text-gray-800 w-48">{person.company_name || '-'}</span>
-                                <span className="flex gap-2 w-32">
-                                    <button
-                                        onClick={() => handleEdit(person.id)}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
-                                        disabled={loading}
-                                    >
-                                        Düzenle
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(person.id)}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm"
-                                        disabled={loading}
-                                    >
-                                        Sil
-                                    </button>
-                                </span>
-                            </li>
-                        ))
-                    ) : (
-                        <li className="p-3 text-gray-500 text-center">Kayıt bulunamadı</li>
+            ) : (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad Soyad</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Kimlik No</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredPersons.map((person) => (
+                                    <tr key={person.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {`${person.first_name} ${person.last_name}`}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.identity_number}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.phone}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {person.email && (
+                                                <a href={`mailto:${person.email}`} className="text-blue-600 hover:text-blue-800">
+                                                    {person.email}
+                                                </a>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.company_name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => navigate(`/persons/${person.id}/edit`)}
+                                                className="text-orange-600 hover:text-orange-800 mr-4"
+                                            >
+                                                Düzenle
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(person.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                Sil
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {filteredPersons.length === 0 && !loading && (
+                        <div className="text-center py-8 text-gray-500">
+                            Gösterilecek kişi bulunamadı.
+                        </div>
                     )}
-                </ul>
-            </div>
+                </div>
+            )}
         </div>
     );
 };
