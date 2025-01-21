@@ -2,6 +2,36 @@
 
 Tüm önemli değişiklikler bu dosyada belgelenecektir.
 
+## [1.0.9] - 2024-03-21
+
+### Değişiklikler
+- Aktivite türleri listesi güncellendi
+- Yeni aktivite türleri eklendi:
+  - Cari Hesap Bilgileri
+  - Fatura kesilecek
+  - Gelen eposta
+  - Giden eposta
+  - İmalat
+  - İşemri oluşturulacak
+  - Keşif
+  - Montaj
+  - Müşteri ziyaret
+  - Numune gönderimi
+  - Prim Hakedişi
+  - Proje çizim
+  - Proje İnceleme
+  - Sevkiyat
+  - Şikayet/Arıza/Servis kaydı
+  - Tahsilat Takibi
+  - Teklif Durum Takibi
+  - Teklif Gönderim Onayı
+  - Teklif Onay Talebi
+  - Teklif verilecek
+  - Teknik Servis
+  - Telefon görüşmesi
+  - Toplantı
+  - Toplu eposta
+
 ## [1.0.6] - 2024-03-21
 
 ### Değişiklikler
@@ -58,4 +88,18 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir.
 - Aktivite formunda ilişki/müşteri arama alanı iyileştirildi
   - Hem kişiler hem de şirketler aynı arama kutusunda aranabilir hale getirildi
   - Kişiler ve şirketler ayrı başlıklar altında listelendi
-  - Şirketler doğrudan seçilebilir hale getirildi 
+  - Şirketler doğrudan seçilebilir hale getirildi
+
+## [1.0.8] - 2024-03-21
+
+### Eklenenler
+- Şirket detay kartı eklendi
+- Şirket listesinde şirket adına tıklandığında detay kartı açılması sağlandı
+- Şirket detay kartında temel bilgiler, iletişim bilgileri, yetkili bilgileri ve diğer bilgiler bölümleri eklendi
+- E-posta ve telefon numaraları tıklanabilir bağlantılar olarak düzenlendi
+
+### Teknik İyileştirmeler
+- Tarih formatlaması için native JavaScript toLocaleDateString kullanımına geçildi
+- Modal dışına tıklandığında kapanma özelliği eklendi
+- Responsive tasarım iyileştirmeleri yapıldı
+- Boş alanlar için tutarlı gösterim ("-" işareti) sağlandı 

@@ -63,3 +63,13 @@ companyService:
 - Responsive tasarım
 - Form validasyonları
 - Kullanıcı dostu arayüz 
+
+## Version 1.0.9 (2024-03-21)
+
+### ActivityForm.js
+```javascript
+- Aktivite türleri listesi güncellendi
+- 24 yeni aktivite türü eklendi
+- Aktivite türleri alfabetik olarak sıralandı
+- Her aktivite türü için benzersiz ID tanımlandı
+``` 

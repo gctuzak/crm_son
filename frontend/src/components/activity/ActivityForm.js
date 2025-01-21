@@ -26,14 +26,30 @@ const ActivityForm = () => {
 
     // Mock veriler
     const activityTypes = [
-        { id: 1, name: 'Telefon görüşmesi' },
-        { id: 2, name: 'E-posta gönderimi' },
-        { id: 3, name: 'Yüz yüze görüşme' },
-        { id: 4, name: 'Teklif hazırlama' },
-        { id: 5, name: 'Sipariş takibi' },
-        { id: 6, name: 'Şikayet yönetimi' },
-        { id: 7, name: 'Ürün tanıtımı' },
-        { id: 8, name: 'Fiyat görüşmesi' }
+        { id: 1, name: 'Cari Hesap Bilgileri' },
+        { id: 2, name: 'Fatura kesilecek' },
+        { id: 3, name: 'Gelen eposta' },
+        { id: 4, name: 'Giden eposta' },
+        { id: 5, name: 'İmalat' },
+        { id: 6, name: 'İşemri oluşturulacak' },
+        { id: 7, name: 'Keşif' },
+        { id: 8, name: 'Montaj' },
+        { id: 9, name: 'Müşteri ziyaret' },
+        { id: 10, name: 'Numune gönderimi' },
+        { id: 11, name: 'Prim Hakedişi' },
+        { id: 12, name: 'Proje çizim' },
+        { id: 13, name: 'Proje İnceleme' },
+        { id: 14, name: 'Sevkiyat' },
+        { id: 15, name: 'Şikayet/Arıza/Servis kaydı' },
+        { id: 16, name: 'Tahsilat Takibi' },
+        { id: 17, name: 'Teklif Durum Takibi' },
+        { id: 18, name: 'Teklif Gönderim Onayı' },
+        { id: 19, name: 'Teklif Onay Talebi' },
+        { id: 20, name: 'Teklif verilecek' },
+        { id: 21, name: 'Teknik Servis' },
+        { id: 22, name: 'Telefon görüşmesi' },
+        { id: 23, name: 'Toplantı' },
+        { id: 24, name: 'Toplu eposta' }
     ];
 
     // Verileri getir
