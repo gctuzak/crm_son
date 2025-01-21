@@ -6,6 +6,8 @@ import { personService } from '../../services/personService';
 
 const PersonList = () => {
     const [persons, setPersons] = useState([]);
+    const [filteredPersons, setFilteredPersons] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -20,6 +22,7 @@ const PersonList = () => {
                 
                 if (response.success) {
                     setPersons(response.data || []);
+                    setFilteredPersons(response.data || []);
                 } else {
                     setError(response.error || 'Kişiler alınamadı');
                 }
@@ -33,6 +36,17 @@ const PersonList = () => {
 
         fetchPersons();
     }, []);
+
+    useEffect(() => {
+        const filtered = persons.filter(person => 
+            person.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            person.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            person.identity_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            person.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            person.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredPersons(filtered);
+    }, [searchTerm, persons]);
 
     const handleEdit = (id) => {
         navigate(`/persons/${id}/edit`);
@@ -55,6 +69,7 @@ const PersonList = () => {
                 const response = await personService.getAll();
                 if (response.success) {
                     setPersons(response.data || []);
+                    setFilteredPersons(response.data || []);
                 }
             } catch (err) {
                 console.error('Silme hatası:', err);
@@ -71,11 +86,30 @@ const PersonList = () => {
 
     return (
         <div className="p-4">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Kişi Listesi</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                    Toplam {persons.length} kişi bulundu
-                </p>
+            <div className="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Kişi Listesi</h1>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Toplam {filteredPersons.length} kişi bulundu
+                    </p>
+                </div>
+                <button
+                    onClick={() => navigate('/persons/new')}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                >
+                    Yeni Kişi Ekle
+                </button>
+            </div>
+
+            {/* Arama Kutusu */}
+            <div className="mb-4">
+                <input
+                    type="text"
+                    placeholder="İsim, soyisim, TC kimlik, telefon veya şirket ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                />
             </div>
 
             {error && (
@@ -92,6 +126,7 @@ const PersonList = () => {
                     <span className="font-semibold text-gray-700 w-48">Soyisim</span>
                     <span className="font-semibold text-gray-700 w-48">TC Kimlik</span>
                     <span className="font-semibold text-gray-700 w-36">Telefon</span>
+                    <span className="font-semibold text-gray-700 w-48">E-posta</span>
                     <span className="font-semibold text-gray-700 w-32">Tip</span>
                     <span className="font-semibold text-gray-700 w-32">Şehir</span>
                     <span className="font-semibold text-gray-700 w-48">Şirket</span>
@@ -99,14 +134,25 @@ const PersonList = () => {
                 </div>
                 {/* Liste İçeriği */}
                 <ul>
-                    {persons && persons.length > 0 ? (
-                        persons.map(person => (
+                    {filteredPersons && filteredPersons.length > 0 ? (
+                        filteredPersons.map(person => (
                             <li key={person.id} className="p-3 border-b last:border-0 flex items-center hover:bg-gray-50">
                                 <span className="text-gray-700 w-24">{person.id}</span>
                                 <span className="text-gray-800 w-48">{person.first_name}</span>
                                 <span className="text-gray-800 w-48">{person.last_name}</span>
                                 <span className="text-gray-800 w-48">{person.identity_number}</span>
                                 <span className="text-gray-800 w-36">{person.phone}</span>
+                                <span className="text-gray-800 w-48">
+                                    {person.email ? (
+                                        <a
+                                            href={`mailto:${person.email}`}
+                                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                                            title="E-posta gönder"
+                                        >
+                                            {person.email}
+                                        </a>
+                                    ) : '-'}
+                                </span>
                                 <span className="text-gray-800 w-32">{person.type}</span>
                                 <span className="text-gray-800 w-32">{person.city || '-'}</span>
                                 <span className="text-gray-800 w-48">{person.company_name || '-'}</span>

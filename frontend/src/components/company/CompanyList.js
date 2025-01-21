@@ -6,6 +6,8 @@ import { companyService } from '../../services/companyService';
 
 const CompanyList = () => {
     const [companies, setCompanies] = useState([]);
+    const [filteredCompanies, setFilteredCompanies] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -19,13 +21,16 @@ const CompanyList = () => {
             
             if (response.success) {
                 setCompanies(Array.isArray(response.data) ? response.data : []);
+                setFilteredCompanies(Array.isArray(response.data) ? response.data : []);
             } else {
                 setCompanies([]);
+                setFilteredCompanies([]);
                 setError(response.error || 'Şirketler yüklenirken bir hata oluştu');
             }
         } catch (err) {
             console.error('Şirketler yüklenirken hata:', err);
             setCompanies([]);
+            setFilteredCompanies([]);
             setError(err.message || 'Şirketler yüklenirken bir hata oluştu');
         } finally {
             setLoading(false);
@@ -35,6 +40,16 @@ const CompanyList = () => {
     useEffect(() => {
         fetchCompanies();
     }, []);
+
+    useEffect(() => {
+        const filtered = companies.filter(company => 
+            company.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            company.tax_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            company.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            company.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredCompanies(filtered);
+    }, [searchTerm, companies]);
 
     const handleDelete = async (id) => {
         if (window.confirm('Bu şirketi silmek istediğinizden emin misiniz?')) {
@@ -77,9 +92,20 @@ const CompanyList = () => {
                 </button>
             </div>
 
-            {companies.length === 0 ? (
+            {/* Arama Kutusu */}
+            <div className="p-4 border-b">
+                <input
+                    type="text"
+                    placeholder="Şirket adı, vergi no, telefon veya e-posta ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                />
+            </div>
+
+            {filteredCompanies.length === 0 ? (
                 <div className="text-center p-4 text-gray-500">
-                    Henüz kayıtlı şirket bulunmuyor
+                    {loading ? 'Yükleniyor...' : 'Kayıt bulunamadı'}
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -107,7 +133,7 @@ const CompanyList = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {companies.map((company) => (
+                            {filteredCompanies.map((company) => (
                                 <tr key={company.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {company.id}
@@ -122,18 +148,26 @@ const CompanyList = () => {
                                         {company.phone}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {company.email}
+                                        {company.email ? (
+                                            <a
+                                                href={`mailto:${company.email}`}
+                                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                                                title="E-posta gönder"
+                                            >
+                                                {company.email}
+                                            </a>
+                                        ) : '-'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <td className="px-4 py-2 text-right">
                                         <button
                                             onClick={() => navigate(`/companies/${company.id}/edit`)}
-                                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded mr-2"
                                         >
                                             Düzenle
                                         </button>
                                         <button
                                             onClick={() => handleDelete(company.id)}
-                                            className="text-red-600 hover:text-red-900"
+                                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded"
                                         >
                                             Sil
                                         </button>

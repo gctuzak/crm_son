@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { personService } from '../../services/personService';
-import { companyService } from '../../services/companyService';
+import CompanySelect from '../common/CompanySelect';
 
 const PersonForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
@@ -24,16 +23,6 @@ const PersonForm = () => {
     });
 
     useEffect(() => {
-        const fetchCompanies = async () => {
-            try {
-                const response = await companyService.getAll();
-                setCompanies(response.data.rows || []);
-            } catch (err) {
-                console.error('Şirketler yüklenirken hata:', err);
-                setCompanies([]);
-            }
-        };
-
         const fetchPerson = async () => {
             if (id) {
                 setLoading(true);
@@ -58,7 +47,6 @@ const PersonForm = () => {
             }
         };
 
-        fetchCompanies();
         fetchPerson();
     }, [id]);
 
@@ -67,6 +55,13 @@ const PersonForm = () => {
         setFormData(prev => ({
             ...prev,
             [name]: value
+        }));
+    };
+
+    const handleCompanyChange = (companyId) => {
+        setFormData(prev => ({
+            ...prev,
+            company_id: companyId
         }));
     };
 
@@ -101,7 +96,7 @@ const PersonForm = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto p-4">
+        <div className="max-w-4xl mx-auto p-4">
             <h1 className="text-2xl font-bold mb-6">
                 {id ? 'Kişi Düzenle' : 'Yeni Kişi Ekle'}
             </h1>
@@ -112,122 +107,121 @@ const PersonForm = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Ad</label>
-                    <input
-                        type="text"
-                        name="first_name"
-                        value={formData.first_name}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                        required
-                    />
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                    {/* Sol Sütun */}
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Ad</label>
+                            <input
+                                type="text"
+                                name="first_name"
+                                value={formData.first_name}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Soyad</label>
+                            <input
+                                type="text"
+                                name="last_name"
+                                value={formData.last_name}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">TC Kimlik No</label>
+                            <input
+                                type="text"
+                                name="identity_number"
+                                value={formData.identity_number}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">E-posta</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Telefon</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Sağ Sütun */}
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Adres</label>
+                            <textarea
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                rows={3}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Şehir</label>
+                            <input
+                                type="text"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Tip</label>
+                            <select
+                                name="type"
+                                value={formData.type}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                            >
+                                <option value="employee">Çalışan</option>
+                                <option value="customer">Müşteri</option>
+                                <option value="supplier">Tedarikçi</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Şirket</label>
+                            <CompanySelect
+                                value={formData.company_id}
+                                onChange={handleCompanyChange}
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Soyad</label>
-                    <input
-                        type="text"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">TC Kimlik No</label>
-                    <input
-                        type="text"
-                        name="identity_number"
-                        value={formData.identity_number}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">E-posta</label>
-                    <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Telefon</label>
-                    <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Adres</label>
-                    <textarea
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        rows={3}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Şehir</label>
-                    <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Tip</label>
-                    <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    >
-                        <option value="employee">Çalışan</option>
-                        <option value="customer">Müşteri</option>
-                        <option value="supplier">Tedarikçi</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Şirket</label>
-                    <select
-                        name="company_id"
-                        value={formData.company_id}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    >
-                        <option value="">Şirket Seçin</option>
-                        {companies.map(company => (
-                            <option key={company.id} value={company.id}>
-                                {company.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-3 pt-6 border-t">
                     <button
                         type="button"
-                        onClick={() => navigate('/persons')}
+                        onClick={() => navigate('/dashboard')}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         İptal

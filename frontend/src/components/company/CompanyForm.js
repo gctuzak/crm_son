@@ -14,6 +14,7 @@ const CompanyForm = () => {
         tax_office: '',
         address: '',
         phone: '',
+        email: '',
         sector: '',
         city: '',
         representative_id: null,
@@ -39,6 +40,7 @@ const CompanyForm = () => {
                             tax_office: data.tax_office || '',
                             address: data.address || '',
                             phone: data.phone || '',
+                            email: data.email || '',
                             sector: data.sector || '',
                             city: data.city || '',
                             representative_id: data.representative_id || null,
@@ -70,30 +72,39 @@ const CompanyForm = () => {
         e.preventDefault();
         setError(null);
         try {
-            const submitData = {
-                name: formData.name,
-                type: formData.type,
-                tax_number: formData.tax_number,
-                tax_office: formData.tax_office,
-                address: formData.address,
-                phone: formData.phone,
-                sector: formData.sector,
-                city: formData.city,
-                representative_id: formData.representative_id,
-                created_by: formData.created_by
-            };
+            const submitData = Object.entries(formData).reduce((acc, [key, value]) => {
+                if (value === '') {
+                    acc[key] = null;
+                }
+                else if (['representative_id', 'created_by'].includes(key)) {
+                    acc[key] = value ? Number(value) : null;
+                }
+                else {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {});
 
             console.log('Gönderilecek veri:', submitData);
 
+            let response;
             if (isEditMode) {
-                const response = await companyService.update(id, submitData);
+                response = await companyService.update(id, submitData);
                 console.log('Güncelleme yanıtı:', response);
+                if (response.success) {
+                    navigate('/dashboard');
+                } else {
+                    throw new Error(response.error || 'Güncelleme başarısız oldu');
+                }
             } else {
-                const response = await companyService.create(submitData);
+                response = await companyService.create(submitData);
                 console.log('Oluşturma yanıtı:', response);
+                if (response.success) {
+                    navigate('/dashboard');
+                } else {
+                    throw new Error(response.error || 'Kayıt oluşturulamadı');
+                }
             }
-            
-            navigate('/persons');
         } catch (error) {
             console.error('Form gönderilirken hata:', error);
             setError(error.message || 'Form gönderilirken bir hata oluştu');
@@ -238,6 +249,17 @@ const CompanyForm = () => {
                         </div>
 
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">İlgili Kişi</label>
                             <input
                                 type="text"
@@ -261,10 +283,10 @@ const CompanyForm = () => {
                     </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 border-t pt-6">
+                <div className="flex justify-end space-x-3 pt-6 border-t">
                     <button
                         type="button"
-                        onClick={() => navigate('/persons')}
+                        onClick={() => navigate('/dashboard')}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         İptal
