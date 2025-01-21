@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { companyService } from '../../services/companyService';
+import CompanyCard from './CompanyCard';
 
 const CompanyList = () => {
     const [companies, setCompanies] = useState([]);
@@ -10,6 +11,7 @@ const CompanyList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedCompany, setSelectedCompany] = useState(null);
     const navigate = useNavigate();
 
     const fetchCompanies = async () => {
@@ -67,6 +69,14 @@ const CompanyList = () => {
         }
     };
 
+    const handleCompanyClick = (company) => {
+        setSelectedCompany(company);
+    };
+
+    const handleCloseCard = () => {
+        setSelectedCompany(null);
+    };
+
     if (loading) {
         return <div className="text-center p-4">Yükleniyor...</div>;
     }
@@ -114,52 +124,62 @@ const CompanyList = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket Adı</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vergi No</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şehir</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket Adı</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vergi No</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şehir</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredCompanies.map((company) => (
+                                <tr key={company.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <button
+                                            onClick={() => handleCompanyClick(company)}
+                                            className="text-sm font-medium text-gray-900 hover:text-orange-600"
+                                        >
+                                            {company.name}
+                                        </button>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.tax_number || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.phone || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {company.email ? (
+                                            <a
+                                                href={`mailto:${company.email}`}
+                                                className="text-sm text-blue-600 hover:text-blue-900"
+                                            >
+                                                {company.email}
+                                            </a>
+                                        ) : (
+                                            <span className="text-sm text-gray-500">-</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.city}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <Link
+                                            to={`/companies/${company.id}/edit`}
+                                            className="text-orange-600 hover:text-orange-900"
+                                        >
+                                            Düzenle
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(company.id)}
+                                            className="text-red-600 hover:text-red-900 ml-2"
+                                        >
+                                            Sil
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredCompanies.map((company) => (
-                                    <tr key={company.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.tax_number}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.phone}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {company.email && (
-                                                <a href={`mailto:${company.email}`} className="text-blue-600 hover:text-blue-800">
-                                                    {company.email}
-                                                </a>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.city}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => navigate(`/companies/${company.id}/edit`)}
-                                                className="text-orange-600 hover:text-orange-800 mr-4"
-                                            >
-                                                Düzenle
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(company.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                            >
-                                                Sil
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                     {filteredCompanies.length === 0 && !loading && (
                         <div className="text-center py-8 text-gray-500">
                             Gösterilecek şirket bulunamadı.
@@ -167,6 +187,12 @@ const CompanyList = () => {
                     )}
                 </div>
             )}
+
+            <CompanyCard
+                company={selectedCompany}
+                isOpen={!!selectedCompany}
+                onClose={handleCloseCard}
+            />
         </div>
     );
 };

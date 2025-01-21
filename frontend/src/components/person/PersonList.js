@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { personService } from '../../services/personService';
+import PersonCard from './PersonCard';
 
 const PersonList = () => {
     const [persons, setPersons] = useState([]);
@@ -10,6 +11,7 @@ const PersonList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedPerson, setSelectedPerson] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -80,6 +82,14 @@ const PersonList = () => {
         }
     };
 
+    const handlePersonClick = (person) => {
+        setSelectedPerson(person);
+    };
+
+    const handleCloseCard = () => {
+        setSelectedPerson(null);
+    };
+
     if (loading && persons.length === 0) {
         return <div className="p-4 text-center">Yükleniyor...</div>;
     }
@@ -118,61 +128,82 @@ const PersonList = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad Soyad</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TC Kimlik No</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ad Soyad
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Şirket
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    E-posta
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Telefon
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    İşlemler
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredPersons.map((person) => (
+                                <tr key={person.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <button
+                                            onClick={() => handlePersonClick(person)}
+                                            className="text-sm font-medium text-gray-900 hover:text-orange-600"
+                                        >
+                                            {person.first_name} {person.last_name}
+                                        </button>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-gray-900">{person.company_name || '-'}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {person.email ? (
+                                            <a
+                                                href={`mailto:${person.email}`}
+                                                className="text-sm text-blue-600 hover:text-blue-900"
+                                            >
+                                                {person.email}
+                                            </a>
+                                        ) : (
+                                            <span className="text-sm text-gray-500">-</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-gray-900">{person.phone || '-'}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <Link
+                                            to={`/persons/${person.id}/edit`}
+                                            className="text-orange-600 hover:text-orange-900"
+                                        >
+                                            Düzenle
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(person.id)}
+                                            className="text-red-600 hover:text-red-900 ml-2"
+                                        >
+                                            Sil
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredPersons.map((person) => (
-                                    <tr key={person.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {`${person.first_name} ${person.last_name}`}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.identity_number}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.phone}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {person.email && (
-                                                <a href={`mailto:${person.email}`} className="text-blue-600 hover:text-blue-800">
-                                                    {person.email}
-                                                </a>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.company_name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => navigate(`/persons/${person.id}/edit`)}
-                                                className="text-orange-600 hover:text-orange-800 mr-4"
-                                            >
-                                                Düzenle
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(person.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                            >
-                                                Sil
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {filteredPersons.length === 0 && !loading && (
-                        <div className="text-center py-8 text-gray-500">
-                            Gösterilecek kişi bulunamadı.
-                        </div>
-                    )}
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
+
+            <PersonCard
+                person={selectedPerson}
+                isOpen={!!selectedPerson}
+                onClose={handleCloseCard}
+            />
         </div>
     );
 };

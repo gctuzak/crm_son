@@ -1,8 +1,15 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { personService } from '../../services/personService';
+import { companyService } from '../../services/companyService';
 
 const Layout = ({ children }) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showResults, setShowResults] = useState(false);
+    const [searchResults, setSearchResults] = useState({ persons: [], companies: [] });
+    const [loading, setLoading] = useState(false);
 
     const menuItems = [
         { path: '/dashboard', icon: 'home', text: 'Ana Menü' },
@@ -14,6 +21,65 @@ const Layout = ({ children }) => {
         { path: '/files', icon: 'folder', text: 'Dosyalar' },
     ];
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.search-container')) {
+                setShowResults(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearch = async (value) => {
+        setSearchTerm(value);
+        if (!value.trim()) {
+            setSearchResults({ persons: [], companies: [] });
+            setShowResults(false);
+            return;
+        }
+
+        setLoading(true);
+        setShowResults(true);
+
+        try {
+            const [personsResponse, companiesResponse] = await Promise.all([
+                personService.getAll(),
+                companyService.getAll()
+            ]);
+
+            const searchTermLower = value.toLowerCase();
+
+            const filteredPersons = personsResponse.success ? personsResponse.data.filter(person =>
+                `${person.first_name} ${person.last_name}`.toLowerCase().includes(searchTermLower)
+            ) : [];
+
+            const filteredCompanies = companiesResponse.success ? companiesResponse.data.filter(company =>
+                company.name.toLowerCase().includes(searchTermLower)
+            ) : [];
+
+            setSearchResults({
+                persons: filteredPersons.slice(0, 5),
+                companies: filteredCompanies.slice(0, 5)
+            });
+        } catch (error) {
+            console.error('Arama hatası:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResultClick = (item, type) => {
+        setShowResults(false);
+        setSearchTerm('');
+        if (type === 'person') {
+            navigate(`/customers?tab=persons&highlight=${item.id}`);
+        } else {
+            navigate(`/customers?tab=companies&highlight=${item.id}`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Üst çubuk */}
@@ -21,17 +87,64 @@ const Layout = ({ children }) => {
                 <div className="flex justify-between items-center px-4 h-12">
                     <div className="flex items-center">
                         <img className="h-6" src="/logo.png" alt="ITEM" />
-                        <div className="ml-4 relative">
+                        <div className="ml-4 relative search-container">
                             <input
                                 type="text"
-                                placeholder="Arama"
-                                className="w-48 px-2 py-1 pr-8 text-black text-sm border rounded"
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
+                                onFocus={() => setShowResults(true)}
+                                placeholder="Kişi veya şirket ara..."
+                                className="w-64 px-2 py-1 pr-8 text-black text-sm border rounded"
                             />
                             <button className="absolute right-2 top-1/2 -translate-y-1/2">
                                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </button>
+                            {showResults && (searchResults.persons.length > 0 || searchResults.companies.length > 0) && (
+                                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto">
+                                    {loading ? (
+                                        <div className="px-4 py-2 text-gray-500">Aranıyor...</div>
+                                    ) : (
+                                        <>
+                                            {searchResults.persons.length > 0 && (
+                                                <div className="border-b border-gray-200">
+                                                    <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50">
+                                                        Kişiler
+                                                    </div>
+                                                    {searchResults.persons.map(person => (
+                                                        <div
+                                                            key={`person_${person.id}`}
+                                                            onClick={() => handleResultClick(person, 'person')}
+                                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                                                        >
+                                                            {person.first_name} {person.last_name}
+                                                            {person.company_name && ` - ${person.company_name}`}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            
+                                            {searchResults.companies.length > 0 && (
+                                                <div>
+                                                    <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50">
+                                                        Şirketler
+                                                    </div>
+                                                    {searchResults.companies.map(company => (
+                                                        <div
+                                                            key={`company_${company.id}`}
+                                                            onClick={() => handleResultClick(company, 'company')}
+                                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                                                        >
+                                                            {company.name}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="flex items-center space-x-3 mr-2">
