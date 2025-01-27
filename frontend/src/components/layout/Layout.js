@@ -19,6 +19,7 @@ const Layout = ({ children }) => {
         { path: '/orders', icon: 'shopping_cart', text: 'Siparişler' },
         { path: '/products', icon: 'inventory_2', text: 'Ürünler' },
         { path: '/files', icon: 'folder', text: 'Dosyalar' },
+        { path: '/users', icon: 'person', text: 'Kullanıcılar' }
     ];
 
     useEffect(() => {
