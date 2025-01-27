@@ -106,6 +106,9 @@ const QuoteForm = () => {
 
     const currencies = ['TRY', 'USD', 'EUR'];
 
+    // Birim listesi güncelleniyor
+    const units = ['m', 'm²', 'saat', 'adet', 'set', 'takım'];
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -196,6 +199,14 @@ const QuoteForm = () => {
         }
     }, [showProductForm]);
 
+    // Modal açıldığında ve kategori değiştiğinde ürünleri filtrele
+    useEffect(() => {
+        if (showProductForm && selectedCategory && productList.length > 0) {
+            const filtered = productList.filter(p => p.category_id === parseInt(selectedCategory));
+            setFilteredProducts(filtered);
+        }
+    }, [showProductForm, selectedCategory, productList]);
+
     const handleProductSelect = (code) => {
         const product = productList.find(p => p.code === code);
         if (product) {
@@ -251,10 +262,10 @@ const QuoteForm = () => {
         }));
     };
 
-    const handleUnitChange = (unit) => {
+    const handleUnitChange = (value) => {
         setSelectedProduct(prev => ({
             ...prev,
-            unit
+            unit: value
         }));
     };
 
@@ -349,11 +360,66 @@ const QuoteForm = () => {
                     const updatedItem = { 
                         ...item, 
                         [field]: value,
-                        // İskonto ve KDV alanları için varsayılan değerler
                         discount: item.discount || 0,
                         tax_rate: item.tax_rate || 20
                     };
-                    updatedItem.total = calculateItemTotal(updatedItem);
+
+                    // Sadece adet girildiğinde en-boy kontrolü ve miktar hesaplama
+                    if (field === 'quantity') {
+                        const width = parseFloat(item.width) || 0;
+                        const height = parseFloat(item.height) || 0;
+                        const quantity = parseInt(value) || 0;
+
+                        // En ve boy değerlerini karşılaştır ve gerekirse yer değiştir
+                        if (width > height && width > 0 && height > 0) {
+                            // En değeri daha büyükse yer değiştir
+                            updatedItem.width = height;
+                            updatedItem.height = width;
+                        }
+
+                        // Miktar hesaplama
+                        if (width > 0 && height > 0 && quantity > 0) {
+                            if (updatedItem.width <= 50) { // 50cm ve altındaysa metre hesabı
+                                // Boy'u metreye çevir (cm'den m'ye)
+                                const metreBoy = updatedItem.height / 100;
+                                updatedItem.amount = metreBoy * quantity;
+                                updatedItem.unit = 'm';
+                            } else { // 50cm üstündeyse metrekare hesabı
+                                updatedItem.amount = ((updatedItem.width * updatedItem.height) / 10000) * quantity;
+                                updatedItem.unit = 'm²';
+                            }
+                        }
+                    }
+                    // En veya boy değiştiğinde sadece miktar hesaplama
+                    else if (field === 'width' || field === 'height') {
+                        const width = parseFloat(field === 'width' ? value : item.width) || 0;
+                        const height = parseFloat(field === 'height' ? value : item.height) || 0;
+                        const quantity = parseInt(item.quantity) || 0;
+
+                        if (width > 0 && height > 0 && quantity > 0) {
+                            if (width <= 50) { // 50cm ve altındaysa metre hesabı
+                                const metreBoy = height / 100;
+                                updatedItem.amount = metreBoy * quantity;
+                                updatedItem.unit = 'm';
+                            } else { // 50cm üstündeyse metrekare hesabı
+                                updatedItem.amount = ((width * height) / 10000) * quantity;
+                                updatedItem.unit = 'm²';
+                            }
+                        }
+                    }
+
+                    // Toplam tutarı hesapla
+                    const amount = parseFloat(updatedItem.amount) || 0;
+                    const unitPrice = parseFloat(updatedItem.unitPrice) || 0;
+                    const discount = parseFloat(updatedItem.discount) || 0;
+                    const tax_rate = parseFloat(updatedItem.tax_rate) || 0;
+
+                    const subtotal = amount * unitPrice;
+                    const discountAmount = subtotal * (discount / 100);
+                    const afterDiscount = subtotal - discountAmount;
+                    const taxAmount = afterDiscount * (tax_rate / 100);
+                    updatedItem.total = afterDiscount + taxAmount;
+
                     return updatedItem;
                 }
                 return item;
@@ -1019,6 +1085,9 @@ const QuoteForm = () => {
                         onClick={() => {
                             setSelectedCategory("1");
                             setShowProductForm(true);
+                            // Gergi tavan ürünlerini filtrele
+                            const filtered = productList.filter(p => p.category_id === 1);
+                            setFilteredProducts(filtered);
                         }}
                         className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
                     >
@@ -1140,7 +1209,17 @@ const QuoteForm = () => {
                                             className="w-full text-center text-sm"
                                         />
                                     </td>
-                                    <td className="border border-gray-300 px-2 py-1 text-center text-sm w-16">{item.unit}</td>
+                                    <td className="border border-gray-300 px-2 py-1 w-16">
+                                        <Select
+                                            value={item.unit}
+                                            onChange={(value) => updateItemField(index, 'unit', value)}
+                                            className="w-full text-sm"
+                                        >
+                                            {units.map(unit => (
+                                                <Option key={unit} value={unit}>{unit}</Option>
+                                            ))}
+                                        </Select>
+                                    </td>
                                     <td className="border border-gray-300 px-2 py-1 w-24">
                                         <Input
                                             type="number"
