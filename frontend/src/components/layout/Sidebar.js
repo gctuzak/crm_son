@@ -11,7 +11,8 @@ const Sidebar = () => {
         { path: '/orders', icon: '📦', label: 'Sipariş' },
         { path: '/products', icon: '🏷️', label: 'Ürünler' },
         { path: '/persons', icon: '👥', label: 'Müşteriler' },
-        { path: '/files', icon: '📁', label: 'Dosyalar' }
+        { path: '/files', icon: '📁', label: 'Dosyalar' },
+        { path: '/users', icon: '👤', label: 'Kullanıcılar' }
     ];
 
     return (
