@@ -1,0 +1,65 @@
+/* Select ve Input bileşenleri için genel stiller */
+.ant-select {
+    width: 100% !important;
+}
+
+.ant-select-selector {
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 4px 11px !important;
+}
+
+.ant-input {
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 4px 11px !important;
+}
+
+/* Select ve Input için hover ve focus durumları */
+.ant-select:hover .ant-select-selector,
+.ant-input:hover {
+    border-color: #f97316 !important; /* Turuncu renk */
+}
+
+.ant-select-focused .ant-select-selector,
+.ant-input:focus {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Option'lar için stil */
+.ant-select-item-option {
+    padding: 8px 12px !important;
+}
+
+.ant-select-item-option-selected {
+    background-color: rgba(249, 115, 22, 0.1) !important;
+    color: #f97316 !important;
+}
+
+/* AutoComplete için özel stiller */
+.ant-select-auto-complete {
+    width: 100% !important;
+}
+
+.ant-select-auto-complete .ant-select-selector {
+    box-shadow: none !important;
+}
+
+.ant-select-auto-complete.ant-select-focused .ant-select-selector {
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+.ant-select-auto-complete .ant-input {
+    border: 1px solid #d9d9d9 !important;
+    transition: all 0.3s !important;
+}
+
+.ant-select-auto-complete .ant-input:hover {
+    border-color: #f97316 !important;
+}
+
+.ant-select-auto-complete .ant-input:focus {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+} 

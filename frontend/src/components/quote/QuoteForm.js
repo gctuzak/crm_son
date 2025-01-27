@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Select, Input, Form, AutoComplete, Button } from 'antd';
+import api from '../../services/api/api';
+import debounce from 'lodash/debounce';
+import { DeleteOutlined } from '@ant-design/icons';
+
+const { Option } = Select;
 
 const QuoteForm = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         company: '',
-        customer: '',
+        companyName: '',
+        customer: null,
+        customerName: '',
         quoteNumber: '2621', // Otomatik oluşturulacak
         assignee: '',
         status: '',
@@ -14,26 +22,72 @@ const QuoteForm = () => {
         city: '',
         projectName: '',
         amount: '',
-        currency: 'TL',
+        currency: 'TRY',
         paymentType: '',
         notes: '',
         systemDate: new Date().toISOString().split('T')[0],
+        items: [],
     });
 
     const [showProductForm, setShowProductForm] = useState(false);
     const [products, setProducts] = useState([]);
+    const [productList, setProductList] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState({
         code: '',
         quantity: 1,
         unit: 'm²',
         price: '',
+        currency: 'TRY',
+        tax_rate: 20,
         discount: 0,
-        total: 0
+        total: 0,
+        description: '',
+        calculatedItems: [] // Hesaplanan ürünleri tutacak yeni alan
     });
 
     const [companies, setCompanies] = useState([]);
     const [customers, setCustomers] = useState([]);
+    const [filteredCustomers, setFilteredCustomers] = useState([]);
     const [files, setFiles] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const [searchResults, setSearchResults] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [searchText, setSearchText] = useState('');
+    const [dropdownVisible, setDropdownVisible] = useState(false);
+    const searchInputRef = useRef(null);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showCustomerList, setShowCustomerList] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [productCodes, setProductCodes] = useState([]);
+    const [productNames, setProductNames] = useState([]);
+    const [showCustomSizeButton, setShowCustomSizeButton] = useState(false);
+    const [showCustomSizeModal, setShowCustomSizeModal] = useState(false);
+    const [customSizeData, setCustomSizeData] = useState([
+        ['', '', '', ''], // Her satır 4 hücre içerecek
+        ['', '', '', ''],
+        ['', '', '', ''],
+        ['', '', '', ''],
+        ['', '', '', '']
+    ]);
+
+    const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+    // Her modal için ayrı state'ler
+    const [productModalPosition, setProductModalPosition] = useState({ x: 0, y: 0 });
+    const [productModalDragging, setProductModalDragging] = useState(false);
+    const [productModalDragStart, setProductModalDragStart] = useState({ x: 0, y: 0 });
+
+    const [customSizeModalPosition, setCustomSizeModalPosition] = useState({ x: 0, y: 0 });
+    const [customSizeModalDragging, setCustomSizeModalDragging] = useState(false);
+    const [customSizeModalDragStart, setCustomSizeModalDragStart] = useState({ x: 0, y: 0 });
 
     // Mock veriler (daha sonra API'den gelecek)
     const quoteTypes = [
@@ -50,48 +104,65 @@ const QuoteForm = () => {
         { id: 4, name: 'Reddedildi' }
     ];
 
-    const currencies = ['TL', 'USD', 'EUR'];
-
-    // Mock ürün listesi
-    const productList = [
-        { code: 'GT.TD.USC.01', name: 'USC Translucent 0,22mm Gergi Tavan', unit: 'm²', price: '40 EUR' },
-        { code: 'GT.TD.USC.02', name: 'USC Translucent 0,22mm Gergi Tavan', unit: 'm', price: '30 EUR' },
-        { code: 'GT.TB.USC.01', name: 'USC Translucent Baskılı 0,22mm Gergi Tavan', unit: 'm²', price: '50 EUR' },
-        { code: 'GT.TB.USC.02', name: 'USC Translucent Baskılı 0,22mm Gergi Tavan', unit: 'm', price: '40 EUR' }
-    ];
+    const currencies = ['TRY', 'USD', 'EUR'];
 
     useEffect(() => {
-        // Şirketleri getir
-        const fetchCompanies = async () => {
+        const fetchData = async () => {
+            setLoading(true);
             try {
-                // const response = await companyService.getAll();
-                // setCompanies(response.data);
-                setCompanies([
-                    { id: 1, name: 'ABC Şirketi' },
-                    { id: 2, name: 'XYZ Ltd.' }
+                // Kişileri ve şirketleri getir
+                const [personsResponse, companiesResponse] = await Promise.all([
+                    api.get('/persons'),
+                    api.get('/companies')
                 ]);
-            } catch (error) {
-                console.error('Şirketler yüklenirken hata:', error);
+
+                // API yanıtından rows verilerini al
+                if (personsResponse.data?.data?.rows) {
+                    setCustomers(personsResponse.data.data.rows);
+                }
+
+                if (companiesResponse.data?.data?.rows) {
+                    setCompanies(companiesResponse.data.data.rows);
+                }
+
+                // Ürünleri getir
+                const productsResponse = await api.get('/products');
+                if (productsResponse.data?.data?.rows) {
+                    setProductList(productsResponse.data.data.rows);
+                }
+            } catch (err) {
+                console.error('Veri yüklenirken hata:', err);
+                setError('Veriler yüklenirken bir hata oluştu');
+            } finally {
+                setLoading(false);
             }
         };
 
-        // Müşterileri getir
-        const fetchCustomers = async () => {
-            try {
-                // const response = await customerService.getAll();
-                // setCustomers(response.data);
-                setCustomers([
-                    { id: 1, name: 'Ahmet Yılmaz' },
-                    { id: 2, name: 'Mehmet Demir' }
-                ]);
-            } catch (error) {
-                console.error('Müşteriler yüklenirken hata:', error);
-            }
-        };
-
-        fetchCompanies();
-        fetchCustomers();
+        fetchData();
     }, []);
+
+    // Şirket seçildiğinde ilgili kişileri filtrele
+    useEffect(() => {
+        if (formData.company) {
+            const filtered = customers.filter(customer => customer.company_id === parseInt(formData.company));
+            setFilteredCustomers(filtered);
+            // Eğer seçili kişi filtrelenmiş listede yoksa, seçimi temizle
+            if (!filtered.find(c => c.id === parseInt(formData.customer))) {
+                setFormData(prev => ({ ...prev, customer: '' }));
+            }
+        } else {
+            setFilteredCustomers([]);
+            setFormData(prev => ({ ...prev, customer: '' }));
+        }
+    }, [formData.company, customers]);
+
+    useEffect(() => {
+        if (searchText.length >= 3) {
+            setDropdownVisible(true);
+        } else {
+            setDropdownVisible(false);
+        }
+    }, [searchText]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -106,16 +177,60 @@ const QuoteForm = () => {
         setFiles(prev => [...prev, ...newFiles]);
     };
 
+    // Ürünleri getir
+    const fetchProducts = async () => {
+        try {
+            const response = await api.get('/products');
+            if (response.data) {
+                setProductList(response.data);
+            }
+        } catch (error) {
+            console.error('Ürünler yüklenirken hata:', error);
+        }
+    };
+
+    // Ürün formu açıldığında ürünleri getir
+    useEffect(() => {
+        if (showProductForm) {
+            fetchProducts();
+        }
+    }, [showProductForm]);
+
     const handleProductSelect = (code) => {
         const product = productList.find(p => p.code === code);
         if (product) {
             setSelectedProduct(prev => ({
                 ...prev,
                 code: product.code,
-                price: parseInt(product.price),
-                unit: product.unit
+                name: product.name,
+                price: product.base_price,
+                currency: product.currency || 'TRY',
+                tax_rate: product.tax_rate || 20,
+                unit: product.unit || 'm²',
+                description: product.description || ''
             }));
-        }
+        };
+    };
+
+    const handleCurrencyChange = (currency) => {
+        setSelectedProduct(prev => ({
+            ...prev,
+            currency
+        }));
+    };
+
+    const handleTaxRateChange = (value) => {
+        const tax_rate = parseFloat(value) || 0;
+        setSelectedProduct(prev => ({
+            ...prev,
+            tax_rate: Math.min(100, Math.max(0, tax_rate))
+        }));
+    };
+
+    const calculateTotal = (quantity, price, discount, tax_rate) => {
+        const subtotal = quantity * price * (1 - discount / 100);
+        const tax = subtotal * (tax_rate / 100);
+        return subtotal + tax;
     };
 
     const handleQuantityChange = (value) => {
@@ -123,7 +238,7 @@ const QuoteForm = () => {
         setSelectedProduct(prev => ({
             ...prev,
             quantity,
-            total: quantity * prev.price * (1 - prev.discount / 100)
+            total: calculateTotal(quantity, prev.price, prev.discount, prev.tax_rate)
         }));
     };
 
@@ -132,30 +247,118 @@ const QuoteForm = () => {
         setSelectedProduct(prev => ({
             ...prev,
             discount,
-            total: prev.quantity * prev.price * (1 - discount / 100)
+            total: calculateTotal(prev.quantity, prev.price, discount, prev.tax_rate)
         }));
     };
 
-    const handleAddProduct = () => {
-        if (selectedProduct.code && selectedProduct.quantity > 0) {
-            const product = productList.find(p => p.code === selectedProduct.code);
-            setProducts(prev => [...prev, {
-                ...selectedProduct,
-                name: product.name
-            }]);
-            setSelectedProduct({
-                code: '',
-                quantity: 1,
-                unit: 'm²',
-                price: '',
-                discount: 0,
-                total: 0
-            });
-        }
+    const handleUnitChange = (unit) => {
+        setSelectedProduct(prev => ({
+            ...prev,
+            unit
+        }));
     };
 
-    const handleRemoveProduct = (index) => {
-        setProducts(prev => prev.filter((_, i) => i !== index));
+    const handleAddProduct = (selectedProduct) => {
+        if (selectedProduct.calculatedItems && selectedProduct.calculatedItems.length > 0) {
+            // Hesaplanmış özel ölçülü ürünler için
+            selectedProduct.calculatedItems.forEach(item => {
+                const newItem = {
+                    code: selectedProduct.code,
+                    name: selectedProduct.name,
+                    description: item.description,
+                    width: item.width,
+                    height: item.height,
+                    quantity: item.quantity,
+                    amount: item.amount,
+                    unit: item.unit,
+                    unitPrice: selectedProduct.price,
+                    currency: selectedProduct.currency || 'TRY',
+                discount: 0,
+                    tax_rate: selectedProduct.tax_rate || 20,
+                    total: 0 // calculateItemTotal fonksiyonu ile hesaplanacak
+                };
+
+                // Toplam tutarı hesapla
+                newItem.total = calculateItemTotal(newItem);
+
+                setFormData(prev => ({
+                    ...prev,
+                    items: [...prev.items, newItem]
+                }));
+            });
+        } else {
+            // Normal ürün ekleme için mevcut mantık
+            const newItem = {
+                code: selectedProduct.code,
+                name: selectedProduct.name,
+                description: selectedProduct.description || '',
+                width: '',
+                height: '',
+                quantity: 1,
+                amount: '',
+                unit: selectedProduct.unit,
+                unitPrice: selectedProduct.price,
+                currency: selectedProduct.currency || 'TRY',
+                discount: 0,
+                tax_rate: selectedProduct.tax_rate || 20,
+                total: selectedProduct.price
+            };
+
+            setFormData(prev => ({
+                ...prev,
+                items: [...prev.items, newItem]
+            }));
+        }
+
+        setShowProductForm(false);
+    };
+
+    const handleRemoveItem = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index)
+        }));
+    };
+
+    const calculateItemTotal = (item) => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const amount = parseFloat(item.amount) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const tax_rate = parseFloat(item.tax_rate) || 0;
+
+        // Miktar * Birim Fiyat
+        const subtotal = amount * unitPrice;
+        
+        // İskonto hesaplama
+        const discountAmount = subtotal * (discount / 100);
+        const afterDiscount = subtotal - discountAmount;
+        
+        // KDV hesaplama
+        const taxAmount = afterDiscount * (tax_rate / 100);
+        
+        // Toplam
+        return afterDiscount + taxAmount;
+    };
+
+    const updateItemField = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            items: prev.items.map((item, i) => {
+                if (i === index) {
+                    const updatedItem = { 
+                        ...item, 
+                        [field]: value,
+                        // İskonto ve KDV alanları için varsayılan değerler
+                        discount: item.discount || 0,
+                        tax_rate: item.tax_rate || 20
+                    };
+                    updatedItem.total = calculateItemTotal(updatedItem);
+                    return updatedItem;
+                }
+                return item;
+            })
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -170,44 +373,492 @@ const QuoteForm = () => {
         }
     };
 
+    // Müşteri arama fonksiyonu
+    const handleSearch = debounce(async (value) => {
+        if (!value || value.length < 3) {
+            setSearchResults([]);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await api.get(`/customers/search?query=${encodeURIComponent(value)}`);
+            const options = response.data.map(item => ({
+                key: String(item.id),
+                value: item.displayName,
+                label: item.displayName,
+                type: item.type,
+                data: item
+            }));
+            setSearchResults(options);
+        } catch (error) {
+            console.error('Müşteri arama hatası:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, 300);
+
+    const handleSearchTextChange = (text) => {
+        setSearchText(text);
+        if (text.length < 3) {
+            setSearchResults([]);
+        } else {
+            handleSearch(text);
+        }
+    };
+
+    // Müşteri seçildiğinde
+    const handleCustomerSelect = async (item, type) => {
+        if (type === 'person') {
+            setSelectedCustomer(item);
+            
+            if (item.company_id) {
+                // Kişi bir şirkette çalışıyorsa
+                const company = companies.find(c => c.id === item.company_id);
+                if (company) {
+                    setSearchTerm(company.name); // Müşteri kutusuna şirket adı
+                    setFormData(prev => ({
+                        ...prev,
+                        customer: { ...company, type: 'company' },
+                        contact: item // İlgili kişi olarak seçilen kişi
+                    }));
+
+                    // Şirketin diğer çalışanlarını getir
+                    try {
+                        const response = await api.get(`/customers/company/${company.id}/persons`);
+                        if (response.data) {
+                            setContacts(response.data.map(person => ({
+                                value: String(person.id),
+                                label: `${person.first_name} ${person.last_name}`,
+                                data: person
+                            })));
+                        }
+                    } catch (error) {
+                        console.error('Şirket çalışanları getirme hatası:', error);
+                        setContacts([]);
+                    }
+                }
+            } else {
+                // Kişi herhangi bir şirkette çalışmıyorsa
+                setSearchTerm(''); // Müşteri kutusunu temizle
+                setFormData(prev => ({
+                    ...prev,
+                    customer: null,
+                    contact: item // İlgili kişi olarak seçilen kişi
+                }));
+                setContacts([{
+                    value: String(item.id),
+                    label: `${item.first_name} ${item.last_name}`,
+                    data: item
+                }]);
+            }
+        } else {
+            // Şirket seçildiğinde
+            setSelectedCustomer(item);
+            setSearchTerm(item.name);
+            setFormData(prev => ({
+                ...prev,
+                customer: { ...item, type: 'company' },
+                contact: null
+            }));
+
+            // Şirket çalışanlarını getir
+            try {
+                const response = await api.get(`/customers/company/${item.id}/persons`);
+                if (response.data) {
+                    setContacts(response.data.map(person => ({
+                        value: String(person.id),
+                        label: `${person.first_name} ${person.last_name}`,
+                        data: person
+                    })));
+                }
+        } catch (error) {
+                console.error('Şirket çalışanları getirme hatası:', error);
+                setContacts([]);
+            }
+        }
+        setShowCustomerList(false);
+    };
+
+    // İlgili kişi seçildiğinde
+    const handleContactSelect = (value, option) => {
+        setFormData(prev => ({
+            ...prev,
+            contact: option.data
+        }));
+    };
+
+    const handleCustomerSearch = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        
+        if (!value) {
+            setSelectedCustomer(null);
+            setFormData(prev => ({ ...prev, customer: null, contact: null }));
+            setShowCustomerList(false);
+            return;
+        }
+
+        setShowCustomerList(true);
+    };
+
+    const getFilteredResults = () => {
+        const searchTermLower = searchTerm.toLowerCase().trim();
+        
+        // Kişileri sadece isimleri üzerinden ara
+        const filteredPersons = customers.filter(person => {
+            if (!person) return false;
+            const firstName = (person.first_name || '').toLowerCase();
+            const lastName = (person.last_name || '').toLowerCase();
+            return firstName.includes(searchTermLower) || lastName.includes(searchTermLower);
+        });
+
+        // Şirketleri sadece şirket adı üzerinden ara
+        const filteredCompanies = companies.filter(company => {
+            if (!company) return false;
+            const companyName = (company.name || '').toLowerCase();
+            return companyName.includes(searchTermLower);
+        });
+
+        console.log('Filtreleme sonuçları:', {
+            searchTerm: searchTermLower,
+            persons: filteredPersons,
+            companies: filteredCompanies,
+            allCustomers: customers,
+            allCompanies: companies
+        });
+
+        return {
+            persons: filteredPersons,
+            companies: filteredCompanies
+        };
+    };
+
+    // Kategori değiştiğinde ürün adlarını filtrele
+    const handleCategoryChange = (categoryId) => {
+        setSelectedCategory(categoryId);
+        setShowCustomSizeButton(categoryId === "1"); // Gergi Tavan kategorisi seçildiğinde butonu göster
+        const filtered = productList.filter(p => p.category_id === parseInt(categoryId));
+        setFilteredProducts(filtered);
+        setSelectedProduct(prev => ({
+            ...prev,
+            code: '',
+            name: '',
+            price: '',
+            currency: 'TRY',
+            tax_rate: 20,
+            unit: 'm²',
+            description: ''
+        }));
+    };
+
+    // Ürün adı seçildiğinde ürün kodlarını filtrele
+    const handleNameSelect = (name) => {
+        const filtered = filteredProducts.filter(p => p.name === name);
+        setProductCodes(filtered);
+        if (filtered.length === 1) {
+            handleProductSelect(filtered[0].code);
+        }
+    };
+
+    // Ürün kodu seçildiğinde ürünü seç
+    const handleCodeSelect = (code) => {
+        handleProductSelect(code);
+    };
+
+    // Excel verilerini işle
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text');
+        const rows = pasteData.split('\n').map(row => row.split('\t'));
+        
+        // Mevcut tabloyu güncelle
+        const newData = [...customSizeData];
+        rows.forEach((row, rowIndex) => {
+            if (rowIndex < newData.length) {
+                row.forEach((cell, cellIndex) => {
+                    if (cellIndex < 4) {
+                        newData[rowIndex][cellIndex] = cell.trim();
+                    }
+                });
+            }
+        });
+        setCustomSizeData(newData);
+    };
+
+    // Hücre değerini güncelle ve alanı hesapla
+    const handleCellChange = (rowIndex, cellIndex, value) => {
+        const newData = [...customSizeData];
+        
+        if (cellIndex === 2) { // Adet değiştiğinde
+            // Önce adeti güncelle
+            newData[rowIndex][cellIndex] = value;
+            
+            // En ve Boy değerlerini al
+            const en = parseFloat(newData[rowIndex][0]) || 0;
+            const boy = parseFloat(newData[rowIndex][1]) || 0;
+            
+            if (en > 0 && boy > 0) {
+                // En ve boy değerlerini karşılaştır ve gerekirse yer değiştir
+                if (en > boy) {
+                    // En değeri daha büyükse yer değiştir
+                    newData[rowIndex][0] = boy;
+                    newData[rowIndex][1] = en;
+                }
+                
+                // Güncel değerlerle hesaplama yap
+                const adet = parseInt(value) || 0;
+                
+                // En 50cm ve altındaysa metre hesabı yap
+                if (newData[rowIndex][0] <= 50) {
+                    // Boy'u metreye çevir (cm'den m'ye)
+                    const metreBoy = newData[rowIndex][1] / 100;
+                    const toplamMetre = metreBoy * adet;
+                    newData[rowIndex][3] = toplamMetre.toFixed(2) + ' m';
+                } else {
+                    // En 50cm'den büyükse metrekare hesabı yap
+                    const alan = ((newData[rowIndex][0] * newData[rowIndex][1]) / 10000) * adet;
+                    newData[rowIndex][3] = alan.toFixed(2) + ' m²';
+                }
+            }
+        } else {
+            // En veya Boy değiştiğinde sadece değeri güncelle
+            newData[rowIndex][cellIndex] = value;
+            
+            // Eğer hem en hem boy hem de adet girilmişse hesapla
+            const en = parseFloat(newData[rowIndex][0]) || 0;
+            const boy = parseFloat(newData[rowIndex][1]) || 0;
+            const adet = parseInt(newData[rowIndex][2]) || 0;
+            
+            if (en > 0 && boy > 0 && adet > 0) {
+                // En 50cm ve altındaysa metre hesabı yap
+                if (en <= 50) {
+                    const metreBoy = boy / 100;
+                    const toplamMetre = metreBoy * adet;
+                    newData[rowIndex][3] = toplamMetre.toFixed(2) + ' m';
+                } else {
+                    const alan = ((en * boy) / 10000) * adet;
+                    newData[rowIndex][3] = alan.toFixed(2) + ' m²';
+                }
+            }
+        }
+
+        setCustomSizeData(newData);
+    };
+
+    // Yeni satır ekle
+    const handleAddRow = () => {
+        setCustomSizeData([...customSizeData, ['', '', '', '']]);
+    };
+
+    // Satır sil
+    const handleRemoveRow = (rowIndex) => {
+        const newData = customSizeData.filter((_, index) => index !== rowIndex);
+        setCustomSizeData(newData);
+    };
+
+    // Özel ölçüleri ürüne ekle
+    const handleSaveCustomSize = () => {
+        const calculatedItems = [];
+        
+        customSizeData.forEach(row => {
+            const en = parseFloat(row[0]) || 0;
+            const boy = parseFloat(row[1]) || 0;
+            const adet = parseInt(row[2]) || 0;
+
+            if (en > 0 && boy > 0 && adet > 0) {
+                if (en <= 50) {
+                    // Metre hesabı
+                    const metreBoy = boy / 100;
+                    const toplamMetre = metreBoy * adet;
+                    calculatedItems.push({
+                        width: en,
+                        height: boy,
+                        quantity: adet,
+                        amount: toplamMetre,
+                        unit: 'm',
+                        description: `${en}cm x ${boy}cm`
+                    });
+                } else {
+                    // Metrekare hesabı
+                    const alan = ((en * boy) / 10000) * adet;
+                    calculatedItems.push({
+                        width: en,
+                        height: boy,
+                        quantity: adet,
+                        amount: alan,
+                        unit: 'm²',
+                        description: `${en}cm x ${boy}cm`
+                    });
+                }
+            }
+        });
+
+        setSelectedProduct(prev => ({
+            ...prev,
+            calculatedItems
+        }));
+
+        setShowCustomSizeModal(false);
+    };
+
+    // Ürün modalı için sürükleme fonksiyonları
+    const handleProductModalMouseDown = (e) => {
+        setProductModalDragging(true);
+        setProductModalDragStart({
+            x: e.clientX - productModalPosition.x,
+            y: e.clientY - productModalPosition.y
+        });
+    };
+
+    const handleProductModalMouseMove = (e) => {
+        if (productModalDragging) {
+            const newX = e.clientX - productModalDragStart.x;
+            const newY = e.clientY - productModalDragStart.y;
+            setProductModalPosition({ x: newX, y: newY });
+        }
+    };
+
+    const handleProductModalMouseUp = () => {
+        setProductModalDragging(false);
+    };
+
+    // Özel ölçü modalı için sürükleme fonksiyonları
+    const handleCustomSizeModalMouseDown = (e) => {
+        setCustomSizeModalDragging(true);
+        setCustomSizeModalDragStart({
+            x: e.clientX - customSizeModalPosition.x,
+            y: e.clientY - customSizeModalPosition.y
+        });
+    };
+
+    const handleCustomSizeModalMouseMove = (e) => {
+        if (customSizeModalDragging) {
+            const newX = e.clientX - customSizeModalDragStart.x;
+            const newY = e.clientY - customSizeModalDragStart.y;
+            setCustomSizeModalPosition({ x: newX, y: newY });
+        }
+    };
+
+    const handleCustomSizeModalMouseUp = () => {
+        setCustomSizeModalDragging(false);
+    };
+
+    useEffect(() => {
+        if (productModalDragging) {
+            document.addEventListener('mousemove', handleProductModalMouseMove);
+            document.addEventListener('mouseup', handleProductModalMouseUp);
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleProductModalMouseMove);
+            document.removeEventListener('mouseup', handleProductModalMouseUp);
+        };
+    }, [productModalDragging]);
+
+    useEffect(() => {
+        if (customSizeModalDragging) {
+            document.addEventListener('mousemove', handleCustomSizeModalMouseMove);
+            document.addEventListener('mouseup', handleCustomSizeModalMouseUp);
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleCustomSizeModalMouseMove);
+            document.removeEventListener('mouseup', handleCustomSizeModalMouseUp);
+        };
+    }, [customSizeModalDragging]);
+
+    if (loading) {
+        return (
+            <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="text-center text-red-500 p-4">
+                    <p>{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">YENİ TEKLİF</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <Form layout="vertical">
                 <div className="grid grid-cols-2 gap-6">
                     {/* Sol Kolon */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Müşteri</label>
-                            <select
-                                name="company"
-                                value={formData.company}
-                                onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            >
-                                <option value="">Seçiniz</option>
-                                {companies.map(company => (
-                                    <option key={company.id} value={company.id}>{company.name}</option>
-                                ))}
-                            </select>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">* Müşteri</label>
+                            <div className="relative">
+                                <Input
+                                    value={searchTerm}
+                                    onChange={handleCustomerSearch}
+                                    placeholder="Müşteri ara - şirket veya kişi"
+                                    onFocus={() => setShowCustomerList(true)}
+                                />
+                                {showCustomerList && searchTerm && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        {/* Kişiler */}
+                                        {getFilteredResults().persons.length > 0 && (
+                                            <div className="px-2 py-1 text-sm text-gray-500 bg-gray-50">Kişiler</div>
+                                        )}
+                                        {getFilteredResults().persons.map(person => (
+                                            <div
+                                                key={`person_${person.id}`}
+                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                                                onClick={() => handleCustomerSelect(person, 'person')}
+                                            >
+                                                {person.first_name} {person.last_name}
+                                                {person.company_name && <span className="text-gray-500"> - {person.company_name}</span>}
+                            </div>
+                                        ))}
+
+                                        {/* Şirketler */}
+                                        {getFilteredResults().companies.length > 0 && (
+                                            <div className="px-2 py-1 text-sm text-gray-500 bg-gray-50">Şirketler</div>
+                                        )}
+                                        {getFilteredResults().companies.map(company => (
+                                            <div
+                                                key={`company_${company.id}`}
+                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                                                onClick={() => handleCustomerSelect(company, 'company')}
+                                        >
+                                            {company.name}
+                                        </div>
+                                    ))}
+
+                                        {getFilteredResults().persons.length === 0 && getFilteredResults().companies.length === 0 && (
+                                            <div className="px-4 py-2 text-gray-500">Sonuç bulunamadı</div>
+                            )}
                         </div>
+                                )}
+                            </div>
+                                    </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">İlgili</label>
-                            <select
-                                name="customer"
-                                value={formData.customer}
-                                onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            <label className="block text-sm font-medium text-gray-700 mb-1">İlgili Kişi</label>
+                            <Select
+                                value={formData.contact?.id ? String(formData.contact.id) : undefined}
+                                onChange={handleContactSelect}
+                                placeholder="İlgili kişi seçin"
+                                style={{ width: '100%' }}
+                                disabled={!formData.customer || (formData.customer.type === 'person')}
                             >
-                                <option value="">Seçiniz</option>
-                                {customers.map(customer => (
-                                    <option key={customer.id} value={customer.id}>{customer.name}</option>
+                                {contacts.map(contact => (
+                                    <Option key={contact.value} value={contact.value}>
+                                        {contact.label}
+                                    </Option>
                                 ))}
-                            </select>
+                            </Select>
                         </div>
 
                         <div>
@@ -228,7 +879,7 @@ const QuoteForm = () => {
                                 name="assignee"
                                 value={formData.assignee}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                                 placeholder="Daha sonra kullanıcılar modülünden seçilecek"
                             />
                         </div>
@@ -239,7 +890,7 @@ const QuoteForm = () => {
                                 name="status"
                                 value={formData.status}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">Seçiniz</option>
                                 {quoteStatuses.map(status => (
@@ -249,13 +900,27 @@ const QuoteForm = () => {
                         </div>
 
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
+                            <textarea
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleInputChange}
+                                rows={4}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Sağ Kolon */}
+                    <div className="space-y-4">
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Gönderim Tarihi</label>
                             <input
                                 type="date"
                                 name="sendDate"
                                 value={formData.sendDate}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                             />
                         </div>
 
@@ -265,18 +930,15 @@ const QuoteForm = () => {
                                 name="quoteType"
                                 value={formData.quoteType}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">Seçiniz</option>
                                 {quoteTypes.map(type => (
                                     <option key={type.id} value={type.id}>{type.name}</option>
                                 ))}
                             </select>
-                        </div>
                     </div>
 
-                    {/* Sağ Kolon */}
-                    <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Uygulanacak Şehir</label>
                             <input
@@ -284,7 +946,7 @@ const QuoteForm = () => {
                                 name="city"
                                 value={formData.city}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                             />
                         </div>
 
@@ -295,7 +957,7 @@ const QuoteForm = () => {
                                 name="projectName"
                                 value={formData.projectName}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2"
                             />
                         </div>
 
@@ -307,7 +969,7 @@ const QuoteForm = () => {
                                     name="amount"
                                     value={formData.amount}
                                     onChange={handleInputChange}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
                                 />
                             </div>
                             <div className="w-24">
@@ -316,24 +978,15 @@ const QuoteForm = () => {
                                     name="currency"
                                     value={formData.currency}
                                     onChange={handleInputChange}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     {currencies.map(currency => (
-                                        <option key={currency} value={currency}>{currency}</option>
+                                        <option key={currency} value={currency}>
+                                            {currency}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
-                            <textarea
-                                name="notes"
-                                value={formData.notes}
-                                onChange={handleInputChange}
-                                rows={4}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            />
                         </div>
 
                         <div>
@@ -356,169 +1009,461 @@ const QuoteForm = () => {
                                 )}
                             </div>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Sistem Kayıt Tarihi</label>
-                            <input
-                                type="date"
-                                name="systemDate"
-                                value={formData.systemDate}
-                                readOnly
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                            />
                         </div>
                     </div>
-                </div>
 
-                {/* Ürün/Hizmet Ekleme Butonu */}
-                <div className="mt-8">
+                {/* Ürün/Hizmet Butonları */}
+                <div className="mt-8 flex gap-4">
                     <button
                         type="button"
-                        onClick={() => setShowProductForm(true)}
-                        className="w-full bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-2"
+                        onClick={() => {
+                            setSelectedCategory("1");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
                     >
-                        <span className="text-xl">+</span> Ürün/Hizmet Ekle
+                        Gergi Tavan Ekle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedCategory("3");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
+                    >
+                        LED Aydınlatma Ekle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedCategory("2");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
+                    >
+                        Hizmet - Servis Ekle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedCategory("4");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
+                    >
+                        Malzeme Ekle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedCategory("5");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
+                    >
+                        Özel Ürün Ekle
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedCategory("6");
+                            setShowProductForm(true);
+                        }}
+                        className="flex-1 bg-orange-100 text-orange-600 px-4 py-3 rounded-md hover:bg-orange-200 transition-colors duration-200 text-sm font-medium"
+                    >
+                        Hazır armatür ekle
                     </button>
                 </div>
 
-                {/* Ürün/Hizmet Ekleme Formu */}
-                {showProductForm && (
-                    <div className="mt-4 border rounded-lg p-4">
-                        <div className="grid grid-cols-6 gap-4 mb-4">
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Kod</label>
-                                <select
-                                    value={selectedProduct.code}
-                                    onChange={(e) => handleProductSelect(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                >
-                                    <option value="">Seçiniz</option>
-                                    {productList.map(product => (
-                                        <option key={product.code} value={product.code}>
-                                            {product.code} - {product.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Miktar</label>
-                                <div className="flex">
-                                    <input
-                                        type="number"
-                                        value={selectedProduct.quantity}
-                                        onChange={(e) => handleQuantityChange(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                    />
-                                    <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-md">
-                                        {selectedProduct.unit}
-                                    </span>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Fiyat</label>
-                                <input
-                                    type="number"
-                                    value={selectedProduct.price}
-                                    readOnly
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">İsk %</label>
-                                <input
-                                    type="number"
-                                    value={selectedProduct.discount}
-                                    onChange={(e) => handleDiscountChange(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tutar</label>
-                                <div className="flex items-center">
-                                    <input
-                                        type="number"
-                                        value={selectedProduct.total}
-                                        readOnly
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleAddProduct}
-                                        className="ml-2 bg-orange-500 text-white p-2 rounded-md hover:bg-orange-600"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Eklenen Ürünler Listesi */}
-                        {products.length > 0 && (
-                            <div className="mt-4">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead>
-                                        <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kod</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Açıklama</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Miktar</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Fiyat</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">İsk %</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Tutar</th>
-                                            <th className="px-4 py-2"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {products.map((product, index) => (
-                                            <tr key={index}>
-                                                <td className="px-4 py-2 text-sm text-gray-900">{product.code}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-900">{product.name}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{product.quantity} {product.unit}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{product.price} EUR</td>
-                                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{product.discount}%</td>
-                                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{product.total} EUR</td>
-                                                <td className="px-4 py-2 text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveProduct(index)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="5" className="px-4 py-2 text-sm font-medium text-gray-900 text-right">Toplam:</td>
-                                            <td className="px-4 py-2 text-sm font-medium text-gray-900 text-right">
-                                                {products.reduce((sum, product) => sum + product.total, 0)} EUR
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                )}
+                {/* Ürün Listesi Tablosu */}
+                <div className="mt-4">
+                    <table className="min-w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="border border-gray-300 px-2 py-1 text-left text-sm w-20">Kodu</th>
+                                <th className="border border-gray-300 px-2 py-1 text-left text-sm w-32">Ürün Adı</th>
+                                <th className="border border-gray-300 px-2 py-1 text-left text-sm w-[400px]">AÇIKLAMA</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-16">EN (cm)</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-16">BOY (cm)</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-16">ADET</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-20">MİKTAR</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-16">BİRİM</th>
+                                <th className="border border-gray-300 px-2 py-1 text-right text-sm w-24">Birim Fiyat</th>
+                                <th className="border border-gray-300 px-2 py-1 text-right text-sm w-20">İSKONTO</th>
+                                <th className="border border-gray-300 px-2 py-1 text-right text-sm w-16">KDV</th>
+                                <th className="border border-gray-300 px-2 py-1 text-right text-sm w-32">TUTAR</th>
+                                <th className="border border-gray-300 px-2 py-1 text-center text-sm w-16">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {formData.items.map((item, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                    <td className="border border-gray-300 px-2 py-1 text-sm w-20">{item.code}</td>
+                                    <td className="border border-gray-300 px-2 py-1 text-sm w-32">{item.name}</td>
+                                    <td className="border border-gray-300 px-2 py-1 w-[400px]">
+                                        <Input
+                                            value={item.description}
+                                            onChange={(e) => updateItemField(index, 'description', e.target.value)}
+                                            className="w-full text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-16">
+                                        <Input
+                                            type="number"
+                                            value={item.width}
+                                            onChange={(e) => updateItemField(index, 'width', e.target.value)}
+                                            className="w-full text-center text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-16">
+                                        <Input
+                                            type="number"
+                                            value={item.height}
+                                            onChange={(e) => updateItemField(index, 'height', e.target.value)}
+                                            className="w-full text-center text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-16">
+                                        <Input
+                                            type="number"
+                                            value={item.quantity}
+                                            onChange={(e) => updateItemField(index, 'quantity', e.target.value)}
+                                            className="w-full text-center text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-20">
+                                        <Input
+                                            type="number"
+                                            value={item.amount}
+                                            onChange={(e) => updateItemField(index, 'amount', e.target.value)}
+                                            className="w-full text-center text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 text-center text-sm w-16">{item.unit}</td>
+                                    <td className="border border-gray-300 px-2 py-1 w-24">
+                                        <Input
+                                            type="number"
+                                            value={item.unitPrice}
+                                            onChange={(e) => updateItemField(index, 'unitPrice', e.target.value)}
+                                            className="w-full text-right text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-20">
+                                        <Input
+                                            type="number"
+                                            value={item.discount}
+                                            onChange={(e) => updateItemField(index, 'discount', e.target.value)}
+                                            className="w-full text-right text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 w-16">
+                                        <Input
+                                            type="number"
+                                            value={item.tax_rate}
+                                            onChange={(e) => updateItemField(index, 'tax_rate', e.target.value)}
+                                            className="w-full text-right text-sm"
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 text-right text-sm w-32">
+                                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: item.currency }).format(item.total)}
+                                    </td>
+                                    <td className="border border-gray-300 px-2 py-1 text-center w-16">
+                                        <Button 
+                                            type="link" 
+                                            danger 
+                                            onClick={() => handleRemoveItem(index)}
+                                            icon={<DeleteOutlined />}
+                                            size="small"
+                                        >
+                                            Sil
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
                 <div className="flex justify-end space-x-3 mt-6">
                     <button
                         type="button"
                         onClick={() => navigate('/quotes')}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         İptal
                     </button>
                     <button
                         type="submit"
-                        className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600"
                     >
                         Kaydet
                     </button>
                 </div>
-            </form>
+            </Form>
+
+                {/* Ürün/Hizmet Ekleme Modal */}
+                {showProductForm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div 
+                            className="bg-white rounded-lg p-6 w-[1000px] max-h-[90vh] overflow-y-auto relative"
+                            style={{
+                                transform: `translate(${productModalPosition.x}px, ${productModalPosition.y}px)`,
+                                transition: productModalDragging ? 'none' : 'transform 0.1s',
+                                cursor: productModalDragging ? 'grabbing' : 'auto'
+                            }}
+                        >
+                            <div 
+                                className="flex justify-between items-center mb-4 cursor-grab"
+                                onMouseDown={handleProductModalMouseDown}
+                                style={{ cursor: productModalDragging ? 'grabbing' : 'grab' }}
+                            >
+                                <h3 className="text-lg font-medium text-gray-900 select-none">Ürün/Hizmet Ekle</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowProductForm(false)}
+                                    className="text-gray-400 hover:text-gray-500"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="relative">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Kategori</label>
+                                        <select
+                                            value={selectedCategory}
+                                            onChange={(e) => handleCategoryChange(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        >
+                                            <option value="">Kategori Seçin</option>
+                                            <option value="1">Gergi Tavan</option>
+                                            <option value="2">Hizmet</option>
+                                            <option value="3">LED</option>
+                                            <option value="4">Yedek Parça</option>
+                                            <option value="5">Trafo</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Ürün Adı</label>
+                                            <select
+                                            value={selectedProduct.name}
+                                            onChange={(e) => handleNameSelect(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            disabled={!selectedCategory}
+                                        >
+                                            <option value="">Ad Seçin</option>
+                                            {filteredProducts.map(product => (
+                                                <option key={product.id} value={product.name}>
+                                                    {product.name}
+                                                </option>
+                                            ))}
+                                            </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Ürün Kodu</label>
+                                            <select
+                                            value={selectedProduct.code}
+                                            onChange={(e) => handleCodeSelect(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            disabled={!selectedProduct.name}
+                                        >
+                                            <option value="">Kod Seçin</option>
+                                            {productCodes.map(product => (
+                                                <option key={product.id} value={product.code}>
+                                                    {product.code}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                {selectedCategory === "1" && (
+                                    <div className="flex justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCustomSizeModal(true)}
+                                            className="bg-orange-100 text-orange-600 px-6 py-2 rounded-md hover:bg-orange-200 text-sm font-medium"
+                                        >
+                                            Özel Ölçü
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Ürün ekleme modalindeki hesaplama tablosu */}
+                                {selectedProduct.calculatedItems.length > 0 && (
+                                    <div className="border border-gray-200 rounded-md overflow-hidden mt-4">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ölçüler</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Adet</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Miktar</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Birim</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {selectedProduct.calculatedItems.map((item, index) => (
+                                                    <tr key={index}>
+                                                        <td className="px-4 py-2 text-sm text-gray-900">{item.description}</td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900">{item.quantity}</td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900">{item.amount.toFixed(2)}</td>
+                                                        <td className="px-4 py-2 text-sm text-gray-900">{item.unit}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end space-x-3 mt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowProductForm(false)}
+                                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                        >
+                                            İptal
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                            handleAddProduct(selectedProduct);
+                                                setShowProductForm(false);
+                                            }}
+                                        disabled={!selectedProduct.code}
+                                            className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Ekle
+                                        </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            {/* Özel Ölçü Modal */}
+            {showCustomSizeModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div 
+                        className="bg-white rounded-lg p-6 w-[800px] relative"
+                        style={{
+                            transform: `translate(${customSizeModalPosition.x}px, ${customSizeModalPosition.y}px)`,
+                            transition: customSizeModalDragging ? 'none' : 'transform 0.1s',
+                            cursor: customSizeModalDragging ? 'grabbing' : 'auto'
+                        }}
+                    >
+                        <div 
+                            className="flex justify-between items-center mb-4 cursor-grab"
+                            onMouseDown={handleCustomSizeModalMouseDown}
+                            style={{ cursor: customSizeModalDragging ? 'grabbing' : 'grab' }}
+                        >
+                            <h3 className="text-lg font-medium text-gray-900 select-none">Özel Ölçü Girişi</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowCustomSizeModal(false)}
+                                className="text-gray-400 hover:text-gray-500"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-600 mb-2">
+                                Excel'den kopyaladığınız verileri aşağıdaki tabloya yapıştırabilir veya manuel olarak girebilirsiniz.
+                            </p>
+                            <div className="border border-gray-300 rounded-md overflow-hidden">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50">
+                                            <th className="border-b border-r px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">En (cm)</th>
+                                            <th className="border-b border-r px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Boy (cm)</th>
+                                            <th className="border-b border-r px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Adet</th>
+                                            <th className="border-b border-r px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Alan (m²)</th>
+                                            <th className="border-b px-4 py-2 w-16"></th>
+                                </tr>
+                            </thead>
+                                    <tbody className="bg-white" onPaste={handlePaste}>
+                                        {customSizeData.map((row, rowIndex) => (
+                                            <tr key={rowIndex} className="border-b last:border-b-0">
+                                                {row.map((cell, cellIndex) => (
+                                                    <td key={cellIndex} className="border-r p-0 last:border-r-0">
+                                                        {cellIndex === 3 ? (
+                                                            // Alan hücresi - salt okunur
+                                                            <input
+                                                                type="text"
+                                                                value={cell}
+                                                                readOnly
+                                                                className="w-full px-4 py-2 bg-gray-50"
+                                                            />
+                                                        ) : (
+                                                            // Diğer hücreler - düzenlenebilir
+                                                            <input
+                                                                type="number"
+                                                                value={cell}
+                                                                onChange={(e) => handleCellChange(rowIndex, cellIndex, e.target.value)}
+                                                                className="w-full px-4 py-2 focus:outline-none focus:bg-orange-50"
+                                                                min={cellIndex === 2 ? "1" : "0"}
+                                                                step={cellIndex === 2 ? "1" : "0.1"}
+                                                                placeholder={cellIndex === 2 ? "Adet" : "0.00"}
+                                                            />
+                                                        )}
+                                        </td>
+                                                ))}
+                                                <td className="px-2 py-1 text-center">
+                                            <button
+                                                type="button"
+                                                        onClick={() => handleRemoveRow(rowIndex)}
+                                                        className="text-red-600 hover:text-red-800 text-sm"
+                                            >
+                                                        ×
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                            <button
+                                type="button"
+                                onClick={handleAddRow}
+                                className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                            >
+                                + Yeni Satır Ekle
+                            </button>
+                        </div>
+
+                        {/* Kaydet butonu öncesi toplam hesaplama */}
+                        <div className="mt-4 text-right text-sm text-gray-600">
+                            Toplam Alan: {customSizeData.reduce((sum, row) => {
+                                const en = parseFloat(row[0]) || 0;
+                                const boy = parseFloat(row[1]) || 0;
+                                const adet = parseInt(row[2]) || 0;
+                                return sum + (en * boy * adet);
+                            }, 0).toFixed(2)} m²
+                        </div>
+
+                        <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                                onClick={() => setShowCustomSizeModal(false)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                        İptal
+                    </button>
+                    <button
+                                type="button"
+                                onClick={handleSaveCustomSize}
+                                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600"
+                    >
+                        Kaydet
+                    </button>
+                </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

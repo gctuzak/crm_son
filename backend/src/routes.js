@@ -4,13 +4,14 @@ const personController = require('./controllers/PersonController');
 const companyController = require('./controllers/CompanyController');
 const fileController = require('./controllers/FileController');
 const StatsController = require('./controllers/StatsController');
+const customerRoutes = require('./routes/customer');
 
 // Ana endpoint
 router.get('/', (req, res) => {
     res.json({
-        success: true,
-        message: 'CRM API çalışıyor',
-        version: '1.0.0'
+        message: 'CRM Item API',
+        version: '1.1.4',
+        timestamp: new Date()
     });
 });
 
@@ -22,6 +23,12 @@ router.use('/companies', require('./routes/company'));
 
 // Dosya route'ları
 router.use('/files', require('./routes/file'));
+
+// Ürün route'ları
+router.use('/products', require('./routes/product'));
+
+// Müşteri route'ları
+router.use('/customers', customerRoutes);
 
 router.get('/persons/stats', personController.getStats);
 

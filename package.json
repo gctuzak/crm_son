@@ -1,27 +1,16 @@
 {
   "name": "crm-item",
-  "version": "1.1.7",
-  "description": "CRM Backend API",
-  "main": "src/index.js",
+  "version": "1.1.6",
+  "description": "CRM Item Management System",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.0",
-    "multer": "^1.4.5-lts.1",
-    "pg": "^8.10.0",
-    "ws": "^8.18.0"
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gctuzak/CRM_ITEM/issues"
   },
-  "devDependencies": {
-    "cross-env": "^7.0.3",
-    "jest": "^29.5.0",
-    "nodemon": "^2.0.22",
-    "supertest": "^6.3.3"
-  }
+  "homepage": "https://github.com/gctuzak/CRM_ITEM#readme"
 }
