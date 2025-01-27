@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/layout/Layout';
 import Dashboard from './components/dashboard/Dashboard';
 import CustomerList from './components/customer/CustomerList';
+import CustomerForm from './components/customer/CustomerForm';
 import PersonForm from './components/person/PersonForm';
 import CompanyForm from './components/company/CompanyForm';
 import FileList from './components/file/FileList';
@@ -20,6 +21,7 @@ import OrderForm from './components/order/OrderForm';
 import { AuthProvider } from './contexts/AuthContext';
 import PersonList from './components/person/PersonList';
 import CompanyList from './components/company/CompanyList';
+import UserList from './components/user/UserList';
 
 const PageWithLayout = ({ children }) => (
     <Layout>
@@ -43,6 +45,18 @@ const App = () => {
                     <Route path="/customers" element={
                         <PageWithLayout>
                             <CustomerList />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/customers/new" element={
+                        <PageWithLayout>
+                            <CustomerForm />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/customers/edit/:id" element={
+                        <PageWithLayout>
+                            <CustomerForm />
                         </PageWithLayout>
                     } />
 
@@ -83,6 +97,12 @@ const App = () => {
                     } />
 
                     <Route path="/quotes/new" element={
+                        <PageWithLayout>
+                            <QuoteForm />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/quotes/edit/:id" element={
                         <PageWithLayout>
                             <QuoteForm />
                         </PageWithLayout>
@@ -130,7 +150,7 @@ const App = () => {
                         </PageWithLayout>
                     } />
 
-                    <Route path="/companies/:id/edit" element={
+                    <Route path="/companies/edit/:id" element={
                         <PageWithLayout>
                             <CompanyForm />
                         </PageWithLayout>
@@ -145,6 +165,12 @@ const App = () => {
                     <Route path="/files/upload" element={
                         <PageWithLayout>
                             <FileUpload />
+                        </PageWithLayout>
+                    } />
+
+                    <Route path="/users" element={
+                        <PageWithLayout>
+                            <UserList />
                         </PageWithLayout>
                     } />
 

@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { personService } from '../../services/personService';
 import { companyService } from '../../services/companyService';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import BusinessIcon from '@mui/icons-material/Business';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import EventIcon from '@mui/icons-material/Event';
+import PersonIcon from '@mui/icons-material/Person';
 
 const Layout = ({ children }) => {
     const location = useLocation();
@@ -12,14 +19,13 @@ const Layout = ({ children }) => {
     const [loading, setLoading] = useState(false);
 
     const menuItems = [
-        { path: '/dashboard', icon: 'home', text: 'Ana Menü' },
-        { path: '/customers', icon: 'people', text: 'Müşteriler' },
-        { path: '/activities', icon: 'event_note', text: 'Aktivite / Görev' },
-        { path: '/quotes', icon: 'description', text: 'Teklifler' },
-        { path: '/orders', icon: 'shopping_cart', text: 'Siparişler' },
-        { path: '/products', icon: 'inventory_2', text: 'Ürünler' },
-        { path: '/files', icon: 'folder', text: 'Dosyalar' },
-        { path: '/users', icon: 'person', text: 'Kullanıcılar' }
+        { key: 'dashboard', icon: <DashboardIcon />, label: 'Dashboard', path: '/dashboard' },
+        { key: 'customers', icon: <PeopleIcon />, label: 'Müşteriler', path: '/customers' },
+        { key: 'companies', icon: <BusinessIcon />, label: 'Firmalar', path: '/companies' },
+        { key: 'quotes', icon: <DescriptionIcon />, label: 'Teklifler', path: '/quotes' },
+        { key: 'orders', icon: <ShoppingCartIcon />, label: 'Siparişler', path: '/orders' },
+        { key: 'activities', icon: <EventIcon />, label: 'Aktiviteler', path: '/activities' },
+        { key: 'users', icon: <PersonIcon />, label: 'Kullanıcılar', path: '/users' }
     ];
 
     useEffect(() => {
@@ -182,7 +188,7 @@ const Layout = ({ children }) => {
                             const isActive = location.pathname === item.path;
                             return (
                                 <Link
-                                    key={item.text}
+                                    key={item.label}
                                     to={item.path}
                                     className={`flex items-center px-4 py-2 mx-2 rounded-md text-sm ${
                                         isActive
@@ -191,7 +197,7 @@ const Layout = ({ children }) => {
                                     }`}
                                 >
                                     <span className="material-icons text-xl mr-2">{item.icon}</span>
-                                    {item.text}
+                                    {item.label}
                                 </Link>
                             );
                         })}

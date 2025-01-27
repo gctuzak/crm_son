@@ -1,6 +1,6 @@
 {
   "name": "crm_son",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "private": true,
   "description": "CRM Item Management System",
   "main": "index.js",

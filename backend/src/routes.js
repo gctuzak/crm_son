@@ -5,6 +5,9 @@ const companyController = require('./controllers/CompanyController');
 const fileController = require('./controllers/FileController');
 const StatsController = require('./controllers/StatsController');
 const customerRoutes = require('./routes/customer');
+const companyRoutes = require('./routes/company');
+const productRoutes = require('./routes/product');
+const userRoutes = require('./routes/user');
 
 // Ana endpoint
 router.get('/', (req, res) => {
@@ -19,16 +22,19 @@ router.get('/', (req, res) => {
 router.use('/persons', require('./routes/person'));
 
 // Şirket route'ları
-router.use('/companies', require('./routes/company'));
+router.use('/companies', companyRoutes);
 
 // Dosya route'ları
 router.use('/files', require('./routes/file'));
 
 // Ürün route'ları
-router.use('/products', require('./routes/product'));
+router.use('/products', productRoutes);
 
 // Müşteri route'ları
 router.use('/customers', customerRoutes);
+
+// Kullanıcı route'ları
+router.use('/users', userRoutes);
 
 router.get('/persons/stats', personController.getStats);
 
